@@ -18,7 +18,7 @@ const Home: React.FC = () => {
                 </IonHeader>
                 <p>
                     <IonText color="white">
-                         Sara e <IonText color="danger">asa</IonText>.
+                         Sara este <IonText color="danger">asa</IonText>.
                     </IonText>
                 </p>
             </IonContent>

@@ -1,7 +1,18 @@
-import { Redirect, Route } from 'react-router-dom';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { Route } from 'react-router-dom';
+import {
+    IonApp,
+    IonIcon,
+    IonLabel,
+    IonRouterOutlet,
+    IonTabBar,
+    IonTabButton,
+    IonTabs,
+    setupIonicReact
+} from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
+import { home as homeIcon, camera as scanIcon, documentText as tabelIcon } from 'ionicons/icons';
+
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -32,21 +43,43 @@ import '@ionic/react/css/palettes/dark.system.css';
 
 /* Theme variables */
 import './theme/variables.css';
+import React from "react";
+import Scan from "./pages/Scan";
+import Tabel from "./pages/Tabel";
+import {Redirect} from "react-router";
 
 setupIonicReact();
 
 const App: React.FC = () => (
   <IonApp>
-    <IonReactRouter>
-      <IonRouterOutlet>
-        <Route exact path="/home">
-          <Home />
-        </Route>
-        <Route exact path="/">
-          <Redirect to="/home" />
-        </Route>
-      </IonRouterOutlet>
-    </IonReactRouter>
+      <IonReactRouter>
+          <IonTabs>
+              <IonRouterOutlet>
+                  <Route exact path="/home" component={Home} />
+                  <Route exact path="/scan" component={Scan} />
+                  <Route exact path="/tabel" component={Tabel} />
+                  <Route exact path="/" render={() => <Redirect to="/home" />} />
+              </IonRouterOutlet>
+
+              <IonTabBar slot="bottom">
+                  <IonTabButton tab="home" href="/home">
+                      <IonIcon icon={homeIcon} />
+                      <IonLabel>Home</IonLabel>
+                  </IonTabButton>
+
+                  <IonTabButton tab="scan" href="/scan">
+                      <IonIcon icon={scanIcon} />
+                      <IonLabel>Scan</IonLabel>
+                  </IonTabButton>
+
+                  <IonTabButton tab="tabel" href="/tabel">
+                      <IonIcon icon={tabelIcon} />
+                      <IonLabel>Tabel</IonLabel>
+                  </IonTabButton>
+              </IonTabBar>
+          </IonTabs>
+      </IonReactRouter>
+
   </IonApp>
 );
 

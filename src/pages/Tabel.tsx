@@ -1,8 +1,7 @@
-import {IonContent, IonHeader, IonPage, IonText, IonTitle, IonToolbar} from '@ionic/react';
-import './Home.css';
 import React from "react";
+import {IonContent, IonHeader, IonPage, IonTitle, IonToolbar} from "@ionic/react";
 
-const Home: React.FC = () => {
+const Tabel: React.FC = () => {
     return (
         <IonPage>
             <IonHeader>
@@ -13,18 +12,12 @@ const Home: React.FC = () => {
             <IonContent scrollY={false} forceOverscroll={false}>
                 <IonHeader>
                     <IonToolbar>
-                        <IonTitle size="large">Home</IonTitle>
+                        <IonTitle size="large">Tabel</IonTitle>
                     </IonToolbar>
                 </IonHeader>
-                <p>
-                    <IonText color="white">
-                         Sara e <IonText color="danger">asa</IonText>.
-                    </IonText>
-                </p>
             </IonContent>
-
         </IonPage>
     );
 };
 
-export default Home;
+export default Tabel;

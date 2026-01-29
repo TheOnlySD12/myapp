@@ -10,6 +10,14 @@ export default defineConfig({
     react(),
     legacy()
   ],
+  server: {
+    https: {
+      key: './localhost-key.pem',
+      cert: './localhost.pem'
+    },
+    host: true,
+    port: 5173
+  },
   test: {
     globals: true,
     environment: 'jsdom',

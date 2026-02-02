@@ -11,7 +11,6 @@ const Scan: React.FC = () => {
     const [scannedItems, setScannedItems] = useState<string[]>([]);
     const [tabel, setTabel] = useState<Elev[]>([]);
 
-
     useEffect(() => {
         const loadData = async () => {
             const data = await loadTabel();
@@ -22,45 +21,45 @@ const Scan: React.FC = () => {
         loadData().then(() => console.log("Loaded Tabel"));
     }, []);
 
-    function handleScan(text: string) {
-        console.log("Scan", text);
+    const handleScan = React.useCallback((text: string) => {
+        if (tabel.length === 0) {
+            console.log("Scan ignored: tabel not loaded yet");
+            return;
+        }
 
-        if (!scannedItems.some(item => item === text)) {
+        if (!scannedItems.includes(text)) {
             const newScannedItems = [...scannedItems, text];
-
             setScannedItems(newScannedItems);
 
             const elevGasit = tabel.find(elev => elev.name === text);
-
             console.log("Scanned:", elevGasit);
 
-            if(elevGasit){
-                console.log('Flags:', elevGasit.flags);
-                setResult(elevGasit.flags.toString)
+            if (elevGasit) {
+                setResult(elevGasit.flags.toString());
             }
         }
+    }, [tabel, scannedItems]);
 
-
-    }
 
     useEffect(() => {
         const reader = new BrowserQRCodeReader();
         let controls: IScannerControls | undefined;
 
         reader.decodeFromVideoDevice(
-                undefined,
-                videoRef.current || undefined,
-                (output,_, c) => {
-                    if (!controls && c) controls = c; // save controls once
-                    if (output) handleScan(output.getText());
-                }
-            )
-            .catch(() => {});
+            undefined,
+            videoRef.current || undefined,
+            (output, _, c) => {
+                if (!controls && c) controls = c;
+                if (output) handleScan(output.getText());
+            }
+        ).catch(() => {});
 
         return () => {
             if (controls) controls.stop();
         };
     }, []);
+
+
 
     return (
         <IonPage>

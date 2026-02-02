@@ -47,15 +47,15 @@ import React, {useEffect} from "react";
 import Scan from "./pages/Scan";
 import Tabel from "./pages/Tabel";
 import {Redirect} from "react-router";
-import {createTestData, initStorage} from "./storage/storage";
+import {createTestData} from "./storage/storage";
 
 setupIonicReact();
 
 const App: React.FC = () => {
     useEffect(() => {
-        initStorage().then(() => console.log("Storage initialized"));
-        createTestData().then(r => r)
+        createTestData().then(() => console.log("Test data created"));
     }, []);
+
 
     return (
         <IonApp>

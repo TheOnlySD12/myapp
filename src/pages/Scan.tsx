@@ -1,14 +1,13 @@
 import React, {useEffect, useRef, useState} from "react";
 import {IonContent, IonHeader, IonPage, IonTitle, IonToolbar} from "@ionic/react";
-import {BrowserQRCodeReader, IScannerControls} from "@zxing/browser";
+import {BrowserQRCodeReader} from "@zxing/browser";
 import {Elev, loadTabel} from "../storage/storage";
-
 
 
 const Scan: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [result, setResult] = useState("");
-    const [scannedItems, setScannedItems] = useState<string[]>([]);
+    const [lastScan, setLastScan] = useState<string | null>(null);
     const [tabel, setTabel] = useState<Elev[]>([]);
 
     useEffect(() => {
@@ -16,49 +15,48 @@ const Scan: React.FC = () => {
             const data = await loadTabel();
             if (data) {
                 setTabel(data);
+                console.log("Tabel loaded:", data);
             }
         };
-        loadData().then(() => console.log("Loaded Tabel"));
+        loadData().then(r => r);
     }, []);
 
-    const handleScan = React.useCallback((text: string) => {
-        if (tabel.length === 0) {
-            console.log("Scan ignored: tabel not loaded yet");
+    const handleScan = (text: string) => {
+        if (!tabel.length) {
+            console.log("Scan ignored: data not ready");
             return;
         }
+        if (text === lastScan) return;
 
-        if (!scannedItems.includes(text)) {
-            const newScannedItems = [...scannedItems, text];
-            setScannedItems(newScannedItems);
+        setLastScan(text);
 
-            const elevGasit = tabel.find(elev => elev.name === text);
-            console.log("Scanned:", elevGasit);
+        const elevGasit = tabel.find(elev => elev.name === text);
 
-            if (elevGasit) {
-                setResult(elevGasit.flags.toString());
-            }
+        if (elevGasit) {
+            setResult(elevGasit.flags.toString());
+        } else {
+            setResult("No matching student found");
         }
-    }, [tabel, scannedItems]);
-
+    };
 
     useEffect(() => {
+        if (!tabel.length) return;
+
         const reader = new BrowserQRCodeReader();
-        let controls: IScannerControls | undefined;
+        let controls: any;
 
         reader.decodeFromVideoDevice(
             undefined,
             videoRef.current || undefined,
-            (output, _, c) => {
-                if (!controls && c) controls = c;
-                if (output) handleScan(output.getText());
+            result => {
+                if (result) handleScan(result.getText());
             }
-        ).catch(() => {});
+        ).then(c => controls = c);
 
         return () => {
-            if (controls) controls.stop();
+            if (controls) controls.stop(); // ← ADD THIS
         };
-    }, []);
-
+    }, [tabel]);
 
 
     return (

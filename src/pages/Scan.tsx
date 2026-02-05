@@ -1,7 +1,9 @@
-import React, {useEffect, useRef, useState} from "react";
-import {IonContent, IonHeader, IonPage, IonTitle, IonToolbar} from "@ionic/react";
-import {BrowserQRCodeReader} from "@zxing/browser";
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import {IonCard, IonCardContent, IonContent, IonHeader, IonPage, IonTitle, IonToolbar} from "@ionic/react";
+import {BrowserQRCodeReader, IScannerControls} from "@zxing/browser";
 import {Elev, loadTabel} from "../storage/storage";
+import {createPortal} from "react-dom";
+import {useScanSettings} from "../Settings";
 
 
 const Scan: React.FC = () => {
@@ -9,41 +11,52 @@ const Scan: React.FC = () => {
     const [result, setResult] = useState("");
     const [lastScan, setLastScan] = useState<string | null>(null);
     const [tabel, setTabel] = useState<Elev[]>([]);
+    const lastScanRef = useRef<string | null>(null);
+    const tabelRef = useRef<Elev[]>([]);
+    const { setIsScanTabActive } = useScanSettings();
+    const { scanMode, isScanTabActive } = useScanSettings();
+    const controlsRef = useRef<IScannerControls | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
             const data = await loadTabel();
             if (data) {
                 setTabel(data);
+                tabelRef.current = data;
                 console.log("Tabel loaded:", data);
             }
         };
         loadData().then(r => r);
     }, []);
 
-    const handleScan = (text: string) => {
-        if (!tabel.length) {
+    useEffect(() => { lastScanRef.current = lastScan; }, [lastScan]);
+    useEffect(() => { tabelRef.current = tabel; }, [tabel]);
+
+    const handleScan = useCallback((text: string) => {
+        if (scanMode === "instant" && !isScanTabActive) return;
+        if (!tabelRef.current.length) {
             console.log("Scan ignored: data not ready");
             return;
         }
-        if (text === lastScan) return;
+        if (text === lastScanRef.current) return;
 
         setLastScan(text);
+        lastScanRef.current = text;
 
-        const elevGasit = tabel.find(elev => elev.name === text);
+        const elevFound = tabelRef.current.find(elev => elev.name === text);
 
-        if (elevGasit) {
-            setResult(elevGasit.flags.toString());
+        if (elevFound) {
+            setResult(elevFound.flags.toString());
         } else {
+            console.log(text);
             setResult("No matching student found");
         }
-    };
+    },[isScanTabActive, scanMode]);
 
     useEffect(() => {
         if (!tabel.length) return;
 
         const reader = new BrowserQRCodeReader();
-        let controls: any;
 
         reader.decodeFromVideoDevice(
             undefined,
@@ -51,12 +64,30 @@ const Scan: React.FC = () => {
             result => {
                 if (result) handleScan(result.getText());
             }
-        ).then(c => controls = c);
+        ).then(c => {
+            controlsRef.current = c;
+        });
 
         return () => {
-            if (controls) controls.stop(); // ← ADD THIS
+            controlsRef.current?.stop();
+            controlsRef.current = null;
         };
-    }, [tabel]);
+    }, [tabel, handleScan]);
+
+    useEffect(() => {
+        if (scanMode === "battery" && !isScanTabActive) {
+            controlsRef.current?.stop();
+        }
+    }, [scanMode, isScanTabActive]);
+
+    useEffect(() => {
+        setIsScanTabActive(true);
+        return () => {
+            setIsScanTabActive(false);
+            setResult("");
+            setLastScan(null);
+        };
+    }, []);
 
 
     return (
@@ -76,9 +107,19 @@ const Scan: React.FC = () => {
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    style={{ width: "100%" , height: "80%" }}
+                    style={{ width: "auto" , height: "auto" }}
                 />
-                <p>{result}</p>
+                {result && createPortal(
+                    <IonCard
+                        style={{
+                            position: "fixed",
+                            bottom: "calc((var(--ion-tab-bar-height, 40px)) + env(safe-area-inset-bottom))"
+                        }}
+                    >
+                        <IonCardContent>Elevul are masa: {result}</IonCardContent>
+                    </IonCard>,
+                    document.body
+                )}
             </IonContent>
         </IonPage>
     );

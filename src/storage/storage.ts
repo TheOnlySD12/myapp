@@ -2,7 +2,8 @@ import { Storage } from '@ionic/storage';
 
 export type Elev = {
     name: string;
-    flags: boolean[];
+    class: string;
+    flags: boolean[]; //6
 };
 
 let store: Storage | null = null;
@@ -28,9 +29,9 @@ export async function loadTabel(): Promise<Elev[] | null> {
 // test data
 export async function createTestData(): Promise<void> {
     const testData: Elev[] = [
-        { name: "John Doe", flags: [false, true] },
-        { name: "test", flags: [true] },
-        { name: "Test User", flags: [true, true] }
+        { name: "John Doe", class: "10A", flags: [false, true, true, true, true, false] },
+        { name: "test", class: "9B", flags: [true, false, false, true, true, false] },
+        { name: "Test User", class: "11A", flags: [true, true, true, true, false, false] },
     ];
     await saveTabel(testData);
 }

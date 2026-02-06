@@ -1,5 +1,14 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {IonCard, IonCardContent, IonContent, IonHeader, IonPage, IonTitle, IonToolbar} from "@ionic/react";
+import {
+    IonCard,
+    IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle,
+    IonContent,
+    IonHeader, IonLoading,
+    IonPage,
+    IonTitle,
+    IonToolbar,
+    useIonViewDidEnter, useIonViewDidLeave
+} from "@ionic/react";
 import {BrowserQRCodeReader, IScannerControls} from "@zxing/browser";
 import {Elev, loadTabel} from "../storage/storage";
 import {createPortal} from "react-dom";
@@ -8,14 +17,37 @@ import {useScanSettings} from "../Settings";
 
 const Scan: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [result, setResult] = useState("");
+    const controlsRef = useRef<IScannerControls | null>(null);
+
+    const [result, setResult] = useState<{ name: string, class: string, desert: boolean; azi: boolean } | null>(null);
     const [lastScan, setLastScan] = useState<string | null>(null);
     const [tabel, setTabel] = useState<Elev[]>([]);
     const lastScanRef = useRef<string | null>(null);
     const tabelRef = useRef<Elev[]>([]);
+
     const { setIsScanTabActive } = useScanSettings();
     const { scanMode, isScanTabActive } = useScanSettings();
-    const controlsRef = useRef<IScannerControls | null>(null);
+    const scanModeRef = useRef(scanMode);
+    const isScanTabActiveRef = useRef(isScanTabActive);
+    const [loading, setLoading] = useState(true);
+
+    useIonViewDidEnter(() => {
+        setIsScanTabActive(true);
+    });
+
+    useIonViewDidLeave(() => {
+        setIsScanTabActive(false);
+        setResult(null);
+        setLastScan(null);
+
+        controlsRef.current?.stop();
+        controlsRef.current = null;
+    });
+
+    useEffect(() => { scanModeRef.current = scanMode; }, [scanMode]);
+    useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
+    useEffect(() => { lastScanRef.current = lastScan; }, [lastScan]);
+    useEffect(() => { tabelRef.current = tabel; }, [tabel]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -25,15 +57,13 @@ const Scan: React.FC = () => {
                 tabelRef.current = data;
                 console.log("Tabel loaded:", data);
             }
+            setLoading(false);
         };
         loadData().then(r => r);
     }, []);
 
-    useEffect(() => { lastScanRef.current = lastScan; }, [lastScan]);
-    useEffect(() => { tabelRef.current = tabel; }, [tabel]);
-
     const handleScan = useCallback((text: string) => {
-        if (scanMode === "instant" && !isScanTabActive) return;
+        if (scanModeRef.current === "instant" && !isScanTabActiveRef.current) return;
         if (!tabelRef.current.length) {
             console.log("Scan ignored: data not ready");
             return;
@@ -46,15 +76,14 @@ const Scan: React.FC = () => {
         const elevFound = tabelRef.current.find(elev => elev.name === text);
 
         if (elevFound) {
-            setResult(elevFound.flags.toString());
+            setResult({ name: elevFound.name, class: elevFound.class, desert: elevFound.flags[0] , azi: elevFound.flags[new Date().getDay()]});
         } else {
-            console.log(text);
-            setResult("No matching student found");
+            setResult({ name: "Elev", class: "-", desert: false, azi: false});
         }
-    },[isScanTabActive, scanMode]);
+    },[]);
 
     useEffect(() => {
-        if (!tabel.length) return;
+        if (loading || !isScanTabActive) return;
 
         const reader = new BrowserQRCodeReader();
 
@@ -72,24 +101,8 @@ const Scan: React.FC = () => {
             controlsRef.current?.stop();
             controlsRef.current = null;
         };
-    }, [tabel, handleScan]);
-
-    useEffect(() => {
-        if (scanMode === "battery" && !isScanTabActive) {
-            controlsRef.current?.stop();
-        }
-    }, [scanMode, isScanTabActive]);
-
-    useEffect(() => {
-        setIsScanTabActive(true);
-        return () => {
-            setIsScanTabActive(false);
-            setResult("");
-            setLastScan(null);
-        };
-    }, []);
-
-
+    }, [handleScan, isScanTabActive, loading, tabel]);
+    
     return (
         <IonPage>
             <IonHeader>
@@ -113,13 +126,26 @@ const Scan: React.FC = () => {
                     <IonCard
                         style={{
                             position: "fixed",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: "90%",
+                            maxWidth: "400px",
+                            zIndex: 9999,
                             bottom: "calc((var(--ion-tab-bar-height, 40px)) + env(safe-area-inset-bottom))"
                         }}
                     >
-                        <IonCardContent>Elevul are masa: {result}</IonCardContent>
+                        <IonCardHeader>
+                            <IonCardTitle>{result.name}</IonCardTitle>
+                            <IonCardSubtitle>{result.class}</IonCardSubtitle>
+                        </IonCardHeader>
+                        <IonCardContent>
+                            <p>Masa: {result.azi ? "Da" : "Nu"}</p>
+                            <p>Desert: {result.desert ? "Da" : "Nu"}</p>
+                        </IonCardContent>
                     </IonCard>,
                     document.body
                 )}
+                <IonLoading isOpen={loading} message="Loading data..." />
             </IonContent>
         </IonPage>
     );

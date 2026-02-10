@@ -35,3 +35,23 @@ export async function createTestData(): Promise<void> {
     ];
     await saveTabel(testData);
 }
+
+export async function loadScannedToday(): Promise<string[] | null> {
+    const s = await getStore();
+    return await s.get('scannedToday');
+}
+
+export async function saveScannedToday(list: string[]): Promise<void> {
+    const s = await getStore();
+    await s.set('scannedToday', list);
+}
+
+export async function loadScanDate(): Promise<string | null> {
+    const s = await getStore();
+    return await s.get('scanDate');
+}
+
+export async function saveScanDate(date: string): Promise<void> {
+    const s = await getStore();
+    await s.set('scanDate', date);
+}

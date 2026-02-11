@@ -9,12 +9,12 @@ const Tabel: React.FC = () => {
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
             </IonHeader>
+            <IonHeader>
+                <IonToolbar>
+                    <IonTitle style={{fontSize: "32px"}}>Tabel</IonTitle>
+                </IonToolbar>
+            </IonHeader>
             <IonContent scrollY={false} forceOverscroll={false}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle size="large">Tabel</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
             </IonContent>
         </IonPage>
     );

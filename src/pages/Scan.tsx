@@ -6,7 +6,7 @@ import {
     IonCard,
     IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle,
     IonContent,
-    IonHeader, IonIcon, IonItem, IonLabel, IonLoading, IonNote,
+    IonHeader, IonIcon, IonItem, IonLabel, IonList, IonLoading, IonModal, IonNote,
     IonPage,
     IonTitle,
     IonToolbar,
@@ -18,6 +18,29 @@ import {createPortal} from "react-dom";
 import {useScanSettings} from "../Settings";
 import {checkmarkDoneCircle, refresh} from "ionicons/icons";
 
+
+function HistoryModal({list}: { list : string[] }) {
+    return (
+        <>
+            <IonHeader>
+                <IonToolbar>
+                    <IonTitle>Istorie</IonTitle>
+                </IonToolbar>
+            </IonHeader>
+            <IonContent>
+                <IonList>
+                    {list.map((elev, index) => (
+                        <IonItem key={index}>
+                            <IonLabel>
+                                {elev}
+                            </IonLabel>
+                        </IonItem>
+                    ))}
+                </IonList>
+            </IonContent>
+        </>
+    );
+}
 
 const Scan: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,6 +56,7 @@ const Scan: React.FC = () => {
     const scanModeRef = useRef(scanMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
     const [loading, setLoading] = useState(true);
+    const [showHistory, setShowHistory] = useState(false);
 
     useIonViewDidEnter(() => {
         setIsScanTabActive(true);
@@ -43,8 +67,10 @@ const Scan: React.FC = () => {
         setResult(null);
         lastScanRef.current = null;
 
-        controlsRef.current?.stop();
-        controlsRef.current = null;
+        if(scanModeRef.current == "battery"){
+            controlsRef.current?.stop();
+            controlsRef.current = null;
+        }
     });
 
     useEffect(() => { scanModeRef.current = scanMode; }, [scanMode]);
@@ -83,7 +109,7 @@ const Scan: React.FC = () => {
 
 
     const handleScan = useCallback(async (text: string) => {
-        if (scanModeRef.current === "instant" && !isScanTabActiveRef.current) return;
+        if (!isScanTabActiveRef.current) return;
         if (!tabelRef.current.length) return;
         if (lastScanRef.current === text) return;
 
@@ -130,13 +156,15 @@ const Scan: React.FC = () => {
         ).then(c => {
             controlsRef.current = c;
         });
+    }, [handleScan, isScanTabActive, loading]);
 
-        return () => {
+    useEffect(() => {
+        if (!isScanTabActive && scanModeRef.current === "battery") {
             controlsRef.current?.stop();
             controlsRef.current = null;
-        };
-    }, [handleScan, isScanTabActive, loading]);
-    
+        }
+    }, [isScanTabActive]);
+
     return (
         <IonPage>
             <IonHeader>
@@ -146,8 +174,8 @@ const Scan: React.FC = () => {
             </IonHeader>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle style={{fontSize: "30px"}}>Scan</IonTitle>
-                    <IonButtons slot="end">
+                    <IonTitle style={{fontSize: "32px"}}>Scan</IonTitle>
+                    <IonButtons slot="start">
                         <IonButton
                             onClick={async () => {
                                 lastScanListRef.current = [];
@@ -162,7 +190,7 @@ const Scan: React.FC = () => {
                         </IonButton>
                     </IonButtons>
                     <IonButtons slot="end">
-                        <IonBadge style={{fontSize: "20px"}}>
+                        <IonBadge onClick={() => setShowHistory(true)} style={{fontSize: "20px"}}>
                             {tabelRef.current.length - lastScanList.length}
                         </IonBadge>
                     </IonButtons>
@@ -216,6 +244,17 @@ const Scan: React.FC = () => {
                 )}
                 <IonLoading isOpen={loading} message="Loading data..." />
             </IonContent>
+            <IonModal
+                isOpen={showHistory}
+                onWillPresent={() => {setIsScanTabActive(false); setResult(null); lastScanRef.current = null;}}
+                onWillDismiss={() => {setIsScanTabActive(true); setShowHistory(false)}}
+                breakpoints={[0, 0.5, 0.75,1]}
+                initialBreakpoint={0.25}
+                expandToScroll={false}
+            >
+                <HistoryModal list={lastScanList} />
+            </IonModal>
+
         </IonPage>
     );
 };

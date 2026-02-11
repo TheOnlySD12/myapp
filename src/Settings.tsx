@@ -12,7 +12,7 @@ interface ScanSettings {
 const ScanSettingsContext = createContext<ScanSettings | null>(null);
 
 export const ScanSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [scanMode, setScanMode] = useState<ScanMode>("battery");
+    const [scanMode, setScanMode] = useState<ScanMode>("instant");
     const [isScanTabActive, setIsScanTabActive] = useState(false);
 
     return (

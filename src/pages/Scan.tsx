@@ -24,7 +24,7 @@ function HistoryModal({list}: { list : string[] }) {
         <>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Istorie</IonTitle>
+                    <IonTitle>Istoric</IonTitle>
                 </IonToolbar>
             </IonHeader>
             <IonContent>
@@ -77,15 +77,12 @@ const Scan: React.FC = () => {
     useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
 
     useEffect(() => {
-        const loadData = async () => {
-            const data = await loadTabel();
+        loadTabel().then(data => {
             if (data) {
                 tabelRef.current = data;
-                console.log("Tabel loaded:", data);
             }
             setLoading(false);
-        };
-        void loadData();
+        });
     }, []);
 
     useEffect(() => {
@@ -143,7 +140,7 @@ const Scan: React.FC = () => {
     },[]);
 
     useEffect(() => {
-        if (loading || !isScanTabActive) return;
+        if (loading || !isScanTabActive || controlsRef.current) return;
 
         const reader = new BrowserQRCodeReader();
 
@@ -163,7 +160,7 @@ const Scan: React.FC = () => {
             controlsRef.current?.stop();
             controlsRef.current = null;
         }
-    }, [isScanTabActive]);
+    }, [isScanTabActive, scanMode]);
 
     return (
         <IonPage>
@@ -216,7 +213,7 @@ const Scan: React.FC = () => {
                             {result.repetat && (
                                 <IonIcon
                                     icon={checkmarkDoneCircle}
-                                    color="warning"
+                                    color="medium"
                                     size="large"
                                     style={{ position: "absolute", top: 8, right: 8 }}
                                 />
@@ -248,7 +245,7 @@ const Scan: React.FC = () => {
                 isOpen={showHistory}
                 onWillPresent={() => {setIsScanTabActive(false); setResult(null); lastScanRef.current = null;}}
                 onWillDismiss={() => {setIsScanTabActive(true); setShowHistory(false)}}
-                breakpoints={[0, 0.5, 0.75,1]}
+                breakpoints={[0, 0.25,0.5, 0.75,1]}
                 initialBreakpoint={0.25}
                 expandToScroll={false}
             >

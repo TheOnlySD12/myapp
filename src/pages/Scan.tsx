@@ -13,10 +13,18 @@ import {
     useIonViewDidEnter, useIonViewDidLeave
 } from "@ionic/react";
 import {BrowserQRCodeReader, IScannerControls} from "@zxing/browser";
-import {Elev, loadScanDate, loadScannedToday, loadTabel, saveScanDate, saveScannedToday} from "../storage/storage";
+import {
+    Elev,
+    loadScanDate,
+    loadScannedToday,
+    loadTabel,
+    saveScanDate,
+    saveScannedToday,
+    saveTabel
+} from "../storage/storage";
 import {createPortal} from "react-dom";
 import {useScanSettings} from "../Settings";
-import {checkmarkDoneCircle, refresh} from "ionicons/icons";
+import {addCircleOutline, checkmarkDoneCircle, refresh} from "ionicons/icons";
 
 
 function HistoryModal({list}: { list : string[] }) {
@@ -50,7 +58,7 @@ const Scan: React.FC = () => {
     const [lastScanList, setLastScanList] = useState<string[]>([]);
     const lastScanListRef = useRef<string[]>([]);
     const lastScanRef = useRef<string | null>(null);
-    const tabelRef = useRef<Elev[]>([]);
+    const [tabel, setTabel] = useState<Elev[]>([]);
 
     const { setIsScanTabActive, scanMode, isScanTabActive } = useScanSettings();
     const scanModeRef = useRef(scanMode);
@@ -79,7 +87,7 @@ const Scan: React.FC = () => {
     useEffect(() => {
         loadTabel().then(data => {
             if (data) {
-                tabelRef.current = data;
+                setTabel(data);
             }
             setLoading(false);
         });
@@ -107,12 +115,12 @@ const Scan: React.FC = () => {
 
     const handleScan = useCallback(async (text: string) => {
         if (!isScanTabActiveRef.current) return;
-        if (!tabelRef.current.length) return;
+        if (!tabel.length) return;
         if (lastScanRef.current === text) return;
 
         lastScanRef.current = text;
         const alreadyScanned = lastScanListRef.current.includes(text);
-        const elevFound = tabelRef.current.find(elev => elev.name === text);
+        const elevFound = tabel.find(elev => elev.name === text);
 
         if(elevFound){
             if(!alreadyScanned){
@@ -137,7 +145,7 @@ const Scan: React.FC = () => {
                 azi: false
             });
         }
-    },[]);
+    },[tabel]);
 
     useEffect(() => {
         if (loading || !isScanTabActive || controlsRef.current) return;
@@ -161,6 +169,16 @@ const Scan: React.FC = () => {
             controlsRef.current = null;
         }
     }, [isScanTabActive, scanMode]);
+
+
+    async function updateFlag(name: string) {
+        const elev = tabel.find(e => e.name === name);
+        if (!elev) return;
+
+        elev.flags[new Date().getDay()] = true;
+
+        await saveTabel(tabel);
+    }
 
     return (
         <IonPage>
@@ -188,7 +206,7 @@ const Scan: React.FC = () => {
                     </IonButtons>
                     <IonButtons slot="end">
                         <IonBadge onClick={() => setShowHistory(true)} style={{fontSize: "20px"}}>
-                            {tabelRef.current.length - lastScanList.length}
+                            {tabel.length - lastScanList.length}
                         </IonBadge>
                     </IonButtons>
                 </IonToolbar>
@@ -217,6 +235,13 @@ const Scan: React.FC = () => {
                                     size="large"
                                     style={{ position: "absolute", top: 8, right: 8 }}
                                 />
+                            )}
+                            {!result.azi && result.class !== "-" && (
+                                <IonButton size={"small"} style={{ position: "absolute", top: 6, right: result.repetat ? "48px" : "8px"}}
+                                           onClick={async () => {await updateFlag(result.name);
+                                }}>
+                                    <IonIcon icon={addCircleOutline}></IonIcon>
+                                </IonButton>
                             )}
                             <IonCardTitle>{result.name}</IonCardTitle>
                             <IonCardSubtitle>{result.class}</IonCardSubtitle>

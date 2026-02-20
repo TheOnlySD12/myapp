@@ -1,6 +1,17 @@
-import {IonAlert, IonButton, IonContent, IonHeader, IonPage, IonText, IonTitle, IonToolbar} from '@ionic/react';
+import {
+    IonAlert,
+    IonButton,
+    IonContent,
+    IonHeader, IonItem,
+    IonPage,
+    IonText,
+    IonTitle,
+    IonToggle,
+    IonToolbar
+} from '@ionic/react';
 import './Home.css';
 import React from "react";
+import {useScanSettings} from "../Settings";
 
 const rainbowStyle = {
     background: "linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF)",
@@ -10,6 +21,8 @@ const rainbowStyle = {
 
 
 const Home: React.FC = () => {
+    const {scanMode , setScanMode} = useScanSettings();
+
     return (
         <IonPage>
             <IonHeader>
@@ -17,18 +30,25 @@ const Home: React.FC = () => {
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
             </IonHeader>
+            <IonHeader>
+                <IonToolbar>
+                    <IonTitle style={{fontSize: "32px"}}>Home</IonTitle>
+                </IonToolbar>
+            </IonHeader>
             <IonContent scrollY={false} forceOverscroll={false}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle size="large">Home</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
                 <p>
                     <IonText>
-                         Sara este <IonText style={rainbowStyle}>asa</IonText>.
+                        Sara este <IonText style={rainbowStyle}>asa</IonText>.
                     </IonText>
                 </p>
-                <IonButton id="present-alert">Click Me</IonButton>
+                <IonItem>
+                    <IonToggle
+                        checked={scanMode === "battery"}
+                        onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                    >Low Power Mode
+                    </IonToggle>
+                </IonItem>
+                <IonButton id="present-alert">Test Alerta</IonButton>
                 <IonAlert
                     header="Alert!"
                     trigger="present-alert"

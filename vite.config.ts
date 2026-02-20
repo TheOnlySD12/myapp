@@ -9,7 +9,16 @@ import {VitePWA} from "vite-plugin-pwa";
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA({registerType: 'autoUpdate'}),
+    VitePWA({
+      registerType: 'autoUpdate',
+      devOptions: { enabled: true },
+      workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallback: '/index.html'
+      }
+    }),
     legacy()
   ],
   server: {

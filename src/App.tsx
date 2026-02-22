@@ -48,7 +48,7 @@ import Scan from "./pages/Scan";
 import Tabel from "./pages/Tabel";
 import {Redirect} from "react-router";
 import {createTestData} from "./storage/storage";
-import {ScanSettingsProvider} from "./Settings";
+import {ScanSettingsProvider} from "./contexts/SettingsProvider";
 
 setupIonicReact();
 

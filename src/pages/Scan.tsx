@@ -23,8 +23,8 @@ import {
     saveTabel
 } from "../storage/storage";
 import {createPortal} from "react-dom";
-import {useScanSettings} from "../Settings";
 import {addCircleOutline, checkmarkDoneCircle, refresh} from "ionicons/icons";
+import {useScanSettings} from "../contexts/SettingsContext";
 
 
 function HistoryModal({list}: { list : string[] }) {

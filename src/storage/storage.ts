@@ -3,7 +3,7 @@ import { Storage } from '@ionic/storage';
 export type Elev = {
     name: string;
     class: string;
-    flags: boolean[]; //6
+    flags: [boolean, boolean, boolean, boolean, boolean, boolean]; //6
 };
 
 let store: Storage | null = null;

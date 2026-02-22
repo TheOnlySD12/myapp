@@ -158,7 +158,7 @@ const Tabel: React.FC = () => {
 
             const updatedRow = {
                 ...copy[index],
-                flags: [...copy[index].flags]
+                flags: [...copy[index].flags] as Elev["flags"]
             };
 
             updatedRow.flags[colIndex] = !updatedRow.flags[colIndex];

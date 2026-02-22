@@ -12,6 +12,8 @@ import {
 import './Home.css';
 import React from "react";
 import {useScanSettings} from "../contexts/SettingsContext";
+import {useTabel} from "../contexts/TabelContext";
+import {createTestData, loadTabel} from "../storage/storage";
 
 const rainbowStyle = {
     background: "linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF)",
@@ -22,6 +24,15 @@ const rainbowStyle = {
 
 const Home: React.FC = () => {
     const {scanMode , setScanMode} = useScanSettings();
+    const { setTabel } = useTabel();
+
+    const handleReset = async () => {
+        await createTestData();
+        const fresh = await loadTabel();
+        if (fresh) {
+            setTabel(fresh);
+        }
+    };
 
     return (
         <IonPage>
@@ -49,6 +60,7 @@ const Home: React.FC = () => {
                     </IonToggle>
                 </IonItem>
                 <IonButton id="present-alert">Test Alerta</IonButton>
+                <IonButton onClick={() => void handleReset()}>Reset Data</IonButton>
                 <IonAlert
                     header="Alert!"
                     trigger="present-alert"

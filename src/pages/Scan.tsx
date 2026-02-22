@@ -6,7 +6,7 @@ import {
     IonCard,
     IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle,
     IonContent,
-    IonHeader, IonIcon, IonItem, IonLabel, IonList, IonLoading, IonModal, IonNote,
+    IonHeader, IonIcon, IonItem, IonLabel, IonList, IonModal, IonNote,
     IonPage,
     IonTitle,
     IonToolbar,
@@ -17,14 +17,13 @@ import {
     Elev,
     loadScanDate,
     loadScannedToday,
-    loadTabel,
     saveScanDate,
-    saveScannedToday,
-    saveTabel
+    saveScannedToday
 } from "../storage/storage";
 import {createPortal} from "react-dom";
 import {addCircleOutline, checkmarkDoneCircle, refresh} from "ionicons/icons";
 import {useScanSettings} from "../contexts/SettingsContext";
+import {useTabel} from "../contexts/TabelContext";
 
 
 function HistoryModal({list}: { list : string[] }) {
@@ -58,12 +57,11 @@ const Scan: React.FC = () => {
     const [lastScanList, setLastScanList] = useState<string[]>([]);
     const lastScanListRef = useRef<string[]>([]);
     const lastScanRef = useRef<string | null>(null);
-    const [tabel, setTabel] = useState<Elev[]>([]);
+    const {tabel, setTabel, loaded} = useTabel();
 
     const { setIsScanTabActive, scanMode, isScanTabActive } = useScanSettings();
     const scanModeRef = useRef(scanMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
-    const [loading, setLoading] = useState(true);
     const [showHistory, setShowHistory] = useState(false);
 
     useIonViewDidEnter(() => {
@@ -83,15 +81,6 @@ const Scan: React.FC = () => {
 
     useEffect(() => { scanModeRef.current = scanMode; }, [scanMode]);
     useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
-
-    useEffect(() => {
-        loadTabel().then(data => {
-            if (data) {
-                setTabel(data);
-            }
-            setLoading(false);
-        });
-    }, []);
 
     useEffect(() => {
         const loadData = async () => {
@@ -148,7 +137,7 @@ const Scan: React.FC = () => {
     },[tabel]);
 
     useEffect(() => {
-        if (loading || !isScanTabActive || controlsRef.current) return;
+        if (!loaded || !isScanTabActive || controlsRef.current) return;
 
         const reader = new BrowserQRCodeReader();
 
@@ -161,7 +150,7 @@ const Scan: React.FC = () => {
         ).then(c => {
             controlsRef.current = c;
         });
-    }, [handleScan, isScanTabActive, loading]);
+    }, [handleScan, isScanTabActive, loaded]);
 
     useEffect(() => {
         if (!isScanTabActive && scanModeRef.current === "battery") {
@@ -172,12 +161,20 @@ const Scan: React.FC = () => {
 
 
     async function updateFlag(name: string) {
-        const elev = tabel.find(e => e.name === name);
-        if (!elev) return;
+        const index = tabel.findIndex(e => e.name === name);
+        if (index === -1) return;
 
-        elev.flags[new Date().getDay()] = true;
+        const updated = [...tabel];
 
-        await saveTabel(tabel);
+        const row: Elev = {
+            ...updated[index],
+            flags: [...updated[index].flags] as Elev["flags"]
+        };
+
+        row.flags[new Date().getDay()] = true;
+        updated[index] = row;
+
+        setTabel(updated);
     }
 
     return (
@@ -264,7 +261,6 @@ const Scan: React.FC = () => {
                     </IonCard>,
                     document.body
                 )}
-                <IonLoading isOpen={loading} message="Loading data..." />
             </IonContent>
             <IonModal
                 isOpen={showHistory}

@@ -11,9 +11,10 @@ import {
     IonTitle,
     IonToolbar
 } from "@ionic/react";
-import {Elev, loadTabel, saveTabel} from "../storage/storage";
+import {Elev} from "../storage/storage";
 import {filterCircle, funnel, pencil} from "ionicons/icons";
 import Fuse from "fuse.js";
+import {useTabel} from "../contexts/TabelContext";
 
 const col: React.CSSProperties = {
     padding: "2px",
@@ -86,7 +87,7 @@ const TabelRow = React.memo(
 
 
 const Tabel: React.FC = () => {
-    const [tabel, setTabel] = useState<Elev[]>([]);
+    const {tabel, setTabel} = useTabel();
     const [draft, setDraft] = useState<Elev[] | null>(null);
     const [mode, setMode] = useState<"filter" | "highlight">("highlight");
     const [fuzzy, setFuzzy] = useState(false);
@@ -96,14 +97,6 @@ const Tabel: React.FC = () => {
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
     const source = edit && draft ? draft : tabel;
-
-    useEffect(() => {
-        loadTabel().then(data => {
-            if (data) {
-                setTabel(data);
-            }
-        });
-    }, []);
 
     const fuse = useMemo(() => {
         if (!source.length) return null;
@@ -193,7 +186,7 @@ const Tabel: React.FC = () => {
                                     setDraft(
                                         tabel.map(e => ({
                                             ...e,
-                                            flags: [...e.flags]
+                                            flags: [...e.flags] as Elev["flags"]
                                         }))
                                     );
                                 } else {
@@ -227,7 +220,6 @@ const Tabel: React.FC = () => {
                             if (!draft) return;
 
                             setTabel(draft);
-                            void saveTabel(draft);
                             setDraft(null);
                             setEdit(false);
                         }}>Save</IonButton>

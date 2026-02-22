@@ -49,6 +49,7 @@ import Tabel from "./pages/Tabel";
 import {Redirect} from "react-router";
 import {createTestData} from "./storage/storage";
 import {ScanSettingsProvider} from "./contexts/SettingsProvider";
+import {TabelProvider} from "./contexts/TabelProvider";
 
 setupIonicReact();
 
@@ -61,33 +62,35 @@ const App: React.FC = () => {
     return (
         <IonApp>
             <ScanSettingsProvider>
-                <IonReactRouter>
-                    <IonTabs>
-                        <IonRouterOutlet>
-                            <Route exact path="/home" component={Home} />
-                            <Route exact path="/scan" component={Scan} />
-                            <Route exact path="/tabel" component={Tabel} />
-                            <Route exact path="/" render={() => <Redirect to="/home" />} />
-                        </IonRouterOutlet>
+                <TabelProvider>
+                    <IonReactRouter>
+                        <IonTabs>
+                            <IonRouterOutlet>
+                                <Route exact path="/home" component={Home}/>
+                                <Route exact path="/scan" component={Scan}/>
+                                <Route exact path="/tabel" component={Tabel}/>
+                                <Route exact path="/" render={() => <Redirect to="/home"/>}/>
+                            </IonRouterOutlet>
 
-                        <IonTabBar slot="bottom">
-                            <IonTabButton tab="home" href="/home">
-                                <IonIcon icon={homeIcon} />
-                                <IonLabel>Home</IonLabel>
-                            </IonTabButton>
+                            <IonTabBar slot="bottom">
+                                <IonTabButton tab="home" href="/home">
+                                    <IonIcon icon={homeIcon}/>
+                                    <IonLabel>Home</IonLabel>
+                                </IonTabButton>
 
-                            <IonTabButton tab="scan" href="/scan">
-                                <IonIcon icon={scanIcon} />
-                                <IonLabel>Scan</IonLabel>
-                            </IonTabButton>
+                                <IonTabButton tab="scan" href="/scan">
+                                    <IonIcon icon={scanIcon}/>
+                                    <IonLabel>Scan</IonLabel>
+                                </IonTabButton>
 
-                            <IonTabButton tab="tabel" href="/tabel">
-                                <IonIcon icon={tabelIcon} />
-                                <IonLabel>Tabel</IonLabel>
-                            </IonTabButton>
-                        </IonTabBar>
-                    </IonTabs>
-                </IonReactRouter>
+                                <IonTabButton tab="tabel" href="/tabel">
+                                    <IonIcon icon={tabelIcon}/>
+                                    <IonLabel>Tabel</IonLabel>
+                                </IonTabButton>
+                            </IonTabBar>
+                        </IonTabs>
+                    </IonReactRouter>
+                </TabelProvider>
             </ScanSettingsProvider>
         </IonApp>
     );

@@ -26,6 +26,16 @@ export async function loadTabel(): Promise<Elev[] | null> {
     return await s.get('tabel');
 }
 
+export async function saveBaseline(x: Elev[]): Promise<void> {
+    const s = await getStore();
+    await s.set('tabel_baseline', x);
+}
+
+export async function loadBaseline(): Promise<Elev[] | null> {
+    const s = await getStore();
+    return await s.get('tabel_baseline');
+}
+
 // test data
 export async function createTestData(): Promise<void> {
     const testData: Elev[] = [
@@ -73,6 +83,7 @@ export async function createTestData(): Promise<void> {
         { name: "XVlad Țepeș", class: "10E", flags: [true, false, true, true, false, true] }
     ];
 
+    await saveBaseline(testData);
     await saveTabel(testData);
 }
 

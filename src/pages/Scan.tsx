@@ -49,6 +49,7 @@ function HistoryModal({list}: { list : string[] }) {
     );
 }
 
+
 const Scan: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const controlsRef = useRef<IScannerControls | null>(null);
@@ -63,6 +64,8 @@ const Scan: React.FC = () => {
     const scanModeRef = useRef(scanMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
     const [showHistory, setShowHistory] = useState(false);
+    const [ignoreFinish, setIgnoreFinish] = useState(false);
+    const showDone = !(tabel.length - lastScanList.length) && !ignoreFinish;
 
     useIonViewDidEnter(() => {
         setIsScanTabActive(true);
@@ -261,6 +264,24 @@ const Scan: React.FC = () => {
                     </IonCard>,
                     document.body
                 )}
+                {showDone && createPortal(
+                    <IonCard
+                        style={{
+                            position: "fixed",
+                            width: "90%",
+                            bottom: "calc((var(--ion-tab-bar-height, 40px)) + env(safe-area-inset-bottom))"
+                        }}
+                    >
+                        <IonCardHeader>
+                            <IonCardTitle>Succes! Gata pe azi.</IonCardTitle>
+                            <IonCardSubtitle>data de azi</IonCardSubtitle>
+                        </IonCardHeader>
+                        <IonCardContent>
+                            <IonButton onClick={() => setIgnoreFinish(true)}>Close</IonButton>
+                        </IonCardContent>
+                    </IonCard>,
+                    document.body
+                )}
             </IonContent>
             <IonModal
                 isOpen={showHistory}
@@ -272,7 +293,6 @@ const Scan: React.FC = () => {
             >
                 <HistoryModal list={lastScanList} />
             </IonModal>
-
         </IonPage>
     );
 };

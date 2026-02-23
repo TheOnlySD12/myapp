@@ -11,7 +11,7 @@ import {
     IonTitle,
     IonToolbar
 } from "@ionic/react";
-import {Elev} from "../storage/storage";
+import {Elev, loadBaseline} from "../storage/storage";
 import {filterCircle, funnel, pencil} from "ionicons/icons";
 import Fuse from "fuse.js";
 import {useTabel} from "../contexts/TabelContext";
@@ -34,11 +34,12 @@ type RowProps = {
     rowIndex: number;
     edit: boolean;
     highlighted: boolean;
+    changedFlags?: number[];
     onToggle: (elev: Elev, colIndex: number) => void;
 };
 
 const TabelRow = React.memo(
-    ({ elev, edit, highlighted, onToggle }: RowProps) => {
+    ({ elev, edit, highlighted, changedFlags, onToggle }: RowProps) => {
 
         const rowRef = useRef<HTMLIonRowElement | null>(null);
 
@@ -74,7 +75,13 @@ const TabelRow = React.memo(
                                 if (!edit) return;
                                 onToggle(elev, colIndex);
                             }}
-                            color={flag ? "success" : "medium"}
+                            color={
+                                changedFlags?.includes(colIndex)
+                                    ? "warning"
+                                    : flag
+                                        ? "success"
+                                        : "medium"
+                            }
                         >
                             {flag ? "Da" : "Nu"}
                         </IonBadge>
@@ -89,14 +96,19 @@ const TabelRow = React.memo(
 const Tabel: React.FC = () => {
     const {tabel, setTabel} = useTabel();
     const [draft, setDraft] = useState<Elev[] | null>(null);
-    const [mode, setMode] = useState<"filter" | "highlight">("highlight");
+    const [mode, setMode] = useState<"filter" | "highlight" | "changes">("highlight");
     const [fuzzy, setFuzzy] = useState(false);
     const [edit, setEdit] = useState(false);
     const [query, setQuery] = useState("");
     const contentRef = useRef<HTMLIonContentElement | null>(null);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+    const [baseline, setBaseline] = useState<Elev[] | null>(null);
 
     const source = edit && draft ? draft : tabel;
+
+    useEffect(() => {
+        loadBaseline().then(setBaseline);
+    }, []);
 
     const fuse = useMemo(() => {
         if (!source.length) return null;
@@ -119,7 +131,36 @@ const Tabel: React.FC = () => {
         );
     }, [query, fuzzy, fuse, source]);
 
-    const dataToRender = mode === "filter" ? filtered : source;
+    const changesMap = useMemo(() => {
+        if (!baseline || baseline.length !== source.length)
+            return new Map();
+
+        const map = new Map<number, number[]>();
+
+        for (let i = 0; i < baseline.length; i++) {
+            const changedCols = baseline[i].flags.reduce<number[]>(
+                (acc, flag, j) => {
+                    if (flag !== source[i].flags[j]) acc.push(j);
+                    return acc;
+                },
+                []
+            );
+
+            if (changedCols.length) {
+                map.set(i, changedCols);
+            }
+        }
+
+        return map;
+    }, [baseline, source]);
+
+    const dataToRender = useMemo(() => {
+        if (mode === "filter") return filtered;
+        if (mode === "changes") {
+            return source.filter((_, index) => changesMap.has(index));
+        }
+        return source;
+    }, [mode, filtered, source, changesMap]);
 
     useEffect(() => {
         if (mode !== "highlight" || !query || filtered.length === 0) {
@@ -161,7 +202,6 @@ const Tabel: React.FC = () => {
         });
     }, []);
 
-
     return (
         <IonPage>
             <IonHeader>
@@ -174,10 +214,19 @@ const Tabel: React.FC = () => {
                     <IonTitle style={{fontSize: "32px"}}>Tabel</IonTitle>
                     <IonButtons slot="start">
                         <IonButton onClick={() => {
-                            setMode(m => m === "filter" ? "highlight" : "filter");
+                            setMode(prev => {
+                                if (prev === "highlight") return "filter";
+                                if (prev === "filter") return "changes";
+                                return "highlight";
+                            });
                         }}>
-                            <IonIcon icon={funnel} color={mode === "filter" ? "primary" : "medium"}/>
+                            <IonIcon icon={funnel}/>
                         </IonButton>
+                    </IonButtons>
+                    <IonButtons slot="start">
+                        <IonBadge color={mode === "highlight" ? "medium" : mode === "filter" ? "primary" : "warning"}>
+                            {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                        </IonBadge>
                     </IonButtons>
                     <IonButtons slot="end">
                         <IonButton onClick={() => {
@@ -254,6 +303,7 @@ const Tabel: React.FC = () => {
                             rowIndex={rowIndex}
                             edit={edit}
                             highlighted={rowIndex === highlightedIndex}
+                            changedFlags={changesMap.get(rowIndex)}
                             onToggle={handleToggle}
                         />
                     ))}

@@ -166,7 +166,7 @@ const Tabel: React.FC = () => {
 
         for (let i = 0; i < source.length; i++) {
             const row = source[i];
-            if (scannedSet.has(row.name)) { //&& row.flags[todayIndex]
+            if (!scannedSet.has(row.name)) { //&& row.flags[todayIndex]
                 console.log("ass")
                 map.set(i, [todayIndex]);
             }

@@ -13,13 +13,7 @@ import {
     useIonViewDidEnter, useIonViewDidLeave
 } from "@ionic/react";
 import {BrowserQRCodeReader, IScannerControls} from "@zxing/browser";
-import {
-    Elev,
-    loadScanDate,
-    loadScannedToday,
-    saveScanDate,
-    saveScannedToday
-} from "../storage/storage";
+import {Elev} from "../storage/storage";
 import {createPortal} from "react-dom";
 import {addCircleOutline, checkmarkDoneCircle, refresh} from "ionicons/icons";
 import {useScanSettings} from "../contexts/SettingsContext";
@@ -55,17 +49,16 @@ const Scan: React.FC = () => {
     const controlsRef = useRef<IScannerControls | null>(null);
 
     const [result, setResult] = useState<{ name: string, class: string, repetat: boolean,desert: boolean; azi: boolean } | null>(null);
-    const [lastScanList, setLastScanList] = useState<string[]>([]);
     const lastScanListRef = useRef<string[]>([]);
     const lastScanRef = useRef<string | null>(null);
-    const {tabel, setTabel, loaded} = useTabel();
+    const { tabel, setTabel, loaded, scannedToday, setScannedToday , clearScannedForToday} = useTabel();
 
     const { setIsScanTabActive, scanMode, isScanTabActive } = useScanSettings();
     const scanModeRef = useRef(scanMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
     const [showHistory, setShowHistory] = useState(false);
     const [ignoreFinish, setIgnoreFinish] = useState(false);
-    const showDone = !(tabel.length - lastScanList.length) && !ignoreFinish;
+    const showDone = !(tabel.length - scannedToday.length) && !ignoreFinish;
 
     useIonViewDidEnter(() => {
         setIsScanTabActive(true);
@@ -86,24 +79,8 @@ const Scan: React.FC = () => {
     useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
 
     useEffect(() => {
-        const loadData = async () => {
-            const date = new Date().toISOString().slice(0, 10);
-            const savedDate = await loadScanDate();
-            const savedToday = await loadScannedToday();
-
-            if(date != savedDate){
-                setLastScanList([]);
-                lastScanListRef.current = [];
-                await saveScannedToday([]);
-                await saveScanDate(date);
-            } else {
-                setLastScanList(savedToday || []);
-                lastScanListRef.current = savedToday || [];
-            }
-        };
-        void loadData();
-    }, []);
-
+        lastScanListRef.current = scannedToday || [];
+    }, [scannedToday]);
 
     const handleScan = useCallback(async (text: string) => {
         if (!isScanTabActiveRef.current) return;
@@ -118,8 +95,7 @@ const Scan: React.FC = () => {
             if(!alreadyScanned){
                 const updatedList = [...lastScanListRef.current, text]
                 lastScanListRef.current = updatedList;
-                setLastScanList(updatedList);
-                await saveScannedToday(updatedList);
+                setScannedToday(updatedList);
             }
             setResult({
                 name: elevFound.name,
@@ -137,7 +113,7 @@ const Scan: React.FC = () => {
                 azi: false
             });
         }
-    },[tabel]);
+    },[setScannedToday, tabel]);
 
     useEffect(() => {
         if (!loaded || !isScanTabActive || controlsRef.current) return;
@@ -183,22 +159,18 @@ const Scan: React.FC = () => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar>
+                <IonToolbar style={{ borderBottom: '0.5px solid #262626' }}>
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
-            </IonHeader>
-            <IonHeader>
                 <IonToolbar>
                     <IonTitle style={{fontSize: "32px"}}>Scan</IonTitle>
                     <IonButtons slot="start">
                         <IonButton
                             onClick={async () => {
                                 lastScanListRef.current = [];
-                                setLastScanList([]);
+                                clearScannedForToday();
                                 lastScanRef.current = null;
                                 setResult(null);
-                                await saveScannedToday([]);
-                                await saveScanDate(new Date().toISOString().slice(0, 10));
                             }}
                         >
                             <IonIcon size="large" icon={refresh}/>
@@ -206,7 +178,7 @@ const Scan: React.FC = () => {
                     </IonButtons>
                     <IonButtons slot="end">
                         <IonBadge onClick={() => setShowHistory(true)} style={{fontSize: "20px"}}>
-                            {tabel.length - lastScanList.length}
+                            {tabel.length - scannedToday.length}
                         </IonBadge>
                     </IonButtons>
                 </IonToolbar>
@@ -291,7 +263,7 @@ const Scan: React.FC = () => {
                 initialBreakpoint={0.25}
                 expandToScroll={false}
             >
-                <HistoryModal list={lastScanList} />
+                <HistoryModal list={scannedToday} />
             </IonModal>
         </IonPage>
     );

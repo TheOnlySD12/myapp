@@ -94,9 +94,9 @@ const TabelRow = React.memo(
 
 
 const Tabel: React.FC = () => {
-    const {tabel, setTabel} = useTabel();
+    const { tabel, setTabel, scannedToday} = useTabel();
     const [draft, setDraft] = useState<Elev[] | null>(null);
-    const [mode, setMode] = useState<"filter" | "highlight" | "changes">("highlight");
+    const [mode, setMode] = useState<"filter" | "highlight" | "changes" | "unscanned">("highlight");
     const [fuzzy, setFuzzy] = useState(false);
     const [edit, setEdit] = useState(false);
     const [query, setQuery] = useState("");
@@ -108,6 +108,10 @@ const Tabel: React.FC = () => {
 
     useEffect(() => {
         loadBaseline().then(setBaseline);
+    }, []);
+
+    const todayIndex = useMemo(() => {
+        return new Date().getDay();
     }, []);
 
     const fuse = useMemo(() => {
@@ -154,13 +158,33 @@ const Tabel: React.FC = () => {
         return map;
     }, [baseline, source]);
 
+    const unscannedMap = useMemo(() => {
+        if (!scannedToday) return new Map<number, number[]>();
+
+        const scannedSet = new Set(scannedToday);
+        const map = new Map<number, number[]>();
+
+        for (let i = 0; i < source.length; i++) {
+            const row = source[i];
+            if (scannedSet.has(row.name)) { //&& row.flags[todayIndex]
+                console.log("ass")
+                map.set(i, [todayIndex]);
+            }
+        }
+
+        return map;
+    }, [scannedToday, source, todayIndex]);
+
     const dataToRender = useMemo(() => {
         if (mode === "filter") return filtered;
         if (mode === "changes") {
             return source.filter((_, index) => changesMap.has(index));
         }
+        if (mode === "unscanned") {
+            return source.filter((_, index) => unscannedMap.has(index));
+        }
         return source;
-    }, [mode, filtered, source, changesMap]);
+    }, [mode, filtered, source, changesMap, unscannedMap]);
 
     useEffect(() => {
         if (mode !== "highlight" || !query || filtered.length === 0) {
@@ -205,11 +229,9 @@ const Tabel: React.FC = () => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar>
+                <IonToolbar style={{ borderBottom: '0.5px solid #262626' }}>
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
-            </IonHeader>
-            <IonHeader>
                 <IonToolbar>
                     <IonTitle style={{fontSize: "32px"}}>Tabel</IonTitle>
                     <IonButtons slot="start">
@@ -217,6 +239,7 @@ const Tabel: React.FC = () => {
                             setMode(prev => {
                                 if (prev === "highlight") return "filter";
                                 if (prev === "filter") return "changes";
+                                if (prev === "changes") return "unscanned";
                                 return "highlight";
                             });
                         }}>
@@ -224,7 +247,7 @@ const Tabel: React.FC = () => {
                         </IonButton>
                     </IonButtons>
                     <IonButtons slot="start">
-                        <IonBadge color={mode === "highlight" ? "medium" : mode === "filter" ? "primary" : "warning"}>
+                        <IonBadge color={mode === "highlight" ? "medium" : mode === "filter" ? "primary" : mode === "changes" ? "warning" : "tertiary"}>
                             {mode.charAt(0).toUpperCase() + mode.slice(1)}
                         </IonBadge>
                     </IonButtons>
@@ -261,9 +284,7 @@ const Tabel: React.FC = () => {
                         setQuery(value.toLowerCase());
                     }}></IonSearchbar>
                 </IonToolbar>
-            </IonHeader>
-            {edit && <IonHeader>
-                <IonToolbar>
+                {edit && <IonToolbar style={{ borderTop: '0.5px solid #262626' }}>
                     <IonButtons slot="start">
                         <IonButton onClick={() => {
                             if (!draft) return;
@@ -283,7 +304,8 @@ const Tabel: React.FC = () => {
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
-            </IonHeader>}
+                }
+            </IonHeader>
             <IonContent ref={contentRef} forceOverscroll={true}>
                 <IonGrid>
                     <IonRow style={{ fontWeight: "bold" }}>

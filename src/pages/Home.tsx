@@ -37,11 +37,9 @@ const Home: React.FC = () => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar>
+                <IonToolbar style={{ borderBottom: '0.5px solid #262626' }}>
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
-            </IonHeader>
-            <IonHeader>
                 <IonToolbar>
                     <IonTitle style={{fontSize: "32px"}}>Home</IonTitle>
                 </IonToolbar>

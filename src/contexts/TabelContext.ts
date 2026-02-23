@@ -6,6 +6,10 @@ export type TabelContextType = {
     setTabel: (data: Elev[]) => void;
     reload: () => Promise<void>;
     loaded: boolean;
+
+    scannedToday: string[]; // list of names scanned today
+    setScannedToday: (list: string[]) => void;
+    clearScannedForToday: () => void;
 };
 
 export const TabelContext = createContext<TabelContextType | undefined>(

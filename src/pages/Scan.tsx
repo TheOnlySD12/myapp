@@ -139,7 +139,7 @@ const Scan: React.FC = () => {
     }, [isScanTabActive, scanMode]);
 
 
-    async function updateFlag(name: string) {
+    function updateFlag(name: string) {
         const index = tabel.findIndex(e => e.name === name);
         if (index === -1) return;
 
@@ -153,6 +153,7 @@ const Scan: React.FC = () => {
         row.flags[new Date().getDay()] = true;
         updated[index] = row;
 
+        //setResult({..., azi = true})
         setTabel(updated);
     }
 
@@ -209,10 +210,9 @@ const Scan: React.FC = () => {
                                 />
                             )}
                             {!result.azi && result.class !== "-" && (
-                                <IonButton size={"small"} style={{ position: "absolute", top: 6, right: result.repetat ? "48px" : "8px"}}
-                                           onClick={async () => {await updateFlag(result.name);
-                                }}>
-                                    <IonIcon icon={addCircleOutline}></IonIcon>
+                                <IonButton size="small" shape="round" style={{ position: "absolute", top: 5, right: result.repetat ? "48px" : "8px"}}
+                                           onClick={() => {updateFlag(result.name)}}>
+                                    <IonIcon slot="icon-only" icon={addCircleOutline}></IonIcon>
                                 </IonButton>
                             )}
                             <IonCardTitle>{result.name}</IonCardTitle>
@@ -245,7 +245,7 @@ const Scan: React.FC = () => {
                         }}
                     >
                         <IonCardHeader>
-                            <IonCardTitle>Succes! Gata pe azi.</IonCardTitle>
+                            <IonCardTitle>Success! Gata pe azi.</IonCardTitle>
                             <IonCardSubtitle>data de azi</IonCardSubtitle>
                         </IonCardHeader>
                         <IonCardContent>

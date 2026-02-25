@@ -1,10 +1,7 @@
 import {
     IonAlert,
-    IonButton,
-    IonContent,
-    IonHeader, IonItem,
-    IonPage,
-    IonText,
+    IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote,
+    IonPage, IonText,
     IonTitle,
     IonToggle,
     IonToolbar
@@ -120,20 +117,76 @@ Structura ajută operatorul să navigheze rapid.
                 </IonToolbar>
             </IonHeader>
             <IonContent scrollY={false} forceOverscroll={false}>
-                <p>
-                    <IonText>
-                        Sara este <IonText style={rainbowStyle}>asa</IonText>.
-                    </IonText>
-                </p>
-                <IonItem>
-                    <IonToggle
-                        checked={scanMode === "battery"}
-                        onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
-                    >Low Power Mode
-                    </IonToggle>
-                </IonItem>
-                <IonButton id="present-alert">Test Alerta</IonButton>
-                <IonButton onClick={() => void handleReset()}>Reset Data</IonButton>
+                <IonCard>
+                    <IonCardHeader>
+                        <IonCardTitle>Statistici</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                        <IonList lines="none">
+                            <IonItem>
+                                <IonLabel>Total Elevi</IonLabel>
+                                <IonNote>300</IonNote>
+                            </IonItem>
+
+                            <IonItem>
+                                <IonLabel>Desert</IonLabel>
+                                <IonNote>200</IonNote>
+                            </IonItem>
+
+                            <IonItem>
+                                <IonLabel>Total Scanați</IonLabel>
+                                <IonNote>102</IonNote>
+                            </IonItem>
+                        </IonList>
+                    </IonCardContent>
+                </IonCard>
+                <IonCard >
+                    <IonCardHeader>
+                        <IonCardTitle>Setari</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                        <IonList lines="none" >
+                            <IonItem>
+                                <IonToggle
+                                    checked={scanMode === "battery"}
+                                    onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                                >Low Power Mode
+                                </IonToggle>
+                            </IonItem>
+                            <IonItem>
+                                <IonToggle
+                                    checked={scanMode === "battery"}
+                                    onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                                >Sunet Scanare
+                                </IonToggle>
+                            </IonItem>
+                            <IonItem>
+                                <IonToggle
+                                    checked={scanMode === "battery"}
+                                    onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                                >Vibratie Scanare
+                                </IonToggle>
+                            </IonItem>
+                        </IonList>
+                    </IonCardContent>
+                </IonCard>
+                <IonCard>
+                    <IonCardHeader>
+                        <IonCardTitle>Extra</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                        <IonList lines="none">
+                            <IonItem>
+                                <IonLabel>Ultima actualizare</IonLabel>
+                                <IonNote>12:07</IonNote>
+                            </IonItem>
+                            <IonItem>
+                                <IonButton id="present-alert">Test Alerta</IonButton>
+                                <IonButton slot="end" onClick={() => void handleReset()}>Reset Data</IonButton>
+                            </IonItem>
+                        </IonList>
+                    </IonCardContent>
+                </IonCard>
                 <IonAlert
                     header="Alert!"
                     trigger="present-alert"

@@ -153,7 +153,7 @@ const Scan: React.FC = () => {
         row.flags[new Date().getDay()] = true;
         updated[index] = row;
 
-        //setResult({..., azi = true})
+        setResult(prev => prev ? { ...prev, azi: true } : null);
         setTabel(updated);
     }
 
@@ -201,20 +201,6 @@ const Scan: React.FC = () => {
                         }}
                     >
                         <IonCardHeader>
-                            {result.repetat && (
-                                <IonIcon
-                                    icon={checkmarkDoneCircle}
-                                    color="medium"
-                                    size="large"
-                                    style={{ position: "absolute", top: 8, right: 8 }}
-                                />
-                            )}
-                            {!result.azi && result.class !== "-" && (
-                                <IonButton size="small" shape="round" style={{ position: "absolute", top: 5, right: result.repetat ? "48px" : "8px"}}
-                                           onClick={() => {updateFlag(result.name)}}>
-                                    <IonIcon slot="icon-only" icon={addCircleOutline}></IonIcon>
-                                </IonButton>
-                            )}
                             <IonCardTitle>{result.name}</IonCardTitle>
                             <IonCardSubtitle>{result.class}</IonCardSubtitle>
                         </IonCardHeader>
@@ -233,6 +219,20 @@ const Scan: React.FC = () => {
                                 </IonNote>
                             </IonItem>
                         </IonCardContent>
+                        {!result.azi && result.class !== "-" && (
+                            <IonButton size="small" shape="round" style={{ position: "absolute", top: 6, right: result.repetat ? "44px" : "8px"}}
+                                       onClick={() => {updateFlag(result.name)}}>
+                                <IonIcon slot="icon-only" icon={addCircleOutline}></IonIcon>
+                            </IonButton>
+                        )}
+                        {result.repetat && (
+                            <IonIcon
+                                icon={checkmarkDoneCircle}
+                                color="medium"
+                                size="large"
+                                style={{ position: "absolute", top: 8, right: 8 }}
+                            />
+                        )}
                     </IonCard>,
                     document.body
                 )}

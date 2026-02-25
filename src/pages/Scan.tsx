@@ -52,6 +52,7 @@ const Scan: React.FC = () => {
     const lastScanListRef = useRef<string[]>([]);
     const lastScanRef = useRef<string | null>(null);
     const { tabel, setTabel, loaded, scannedToday, setScannedToday , clearScannedForToday} = useTabel();
+    const tabelRef = useRef(tabel);
 
     const { setIsScanTabActive, scanMode, isScanTabActive } = useScanSettings();
     const scanModeRef = useRef(scanMode);
@@ -77,19 +78,17 @@ const Scan: React.FC = () => {
 
     useEffect(() => { scanModeRef.current = scanMode; }, [scanMode]);
     useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
-
-    useEffect(() => {
-        lastScanListRef.current = scannedToday || [];
-    }, [scannedToday]);
+    useEffect(() => { tabelRef.current = tabel; }, [tabel]);
+    useEffect(() => {lastScanListRef.current = scannedToday || []; }, [scannedToday]);
 
     const handleScan = useCallback(async (text: string) => {
         if (!isScanTabActiveRef.current) return;
-        if (!tabel.length) return;
+        if (!tabelRef.current.length) return;
         if (lastScanRef.current === text) return;
 
         lastScanRef.current = text;
         const alreadyScanned = lastScanListRef.current.includes(text);
-        const elevFound = tabel.find(elev => elev.name === text);
+        const elevFound = tabelRef.current.find(elev => elev.name === text);
 
         if(elevFound){
             if(!alreadyScanned){
@@ -113,7 +112,7 @@ const Scan: React.FC = () => {
                 azi: false
             });
         }
-    },[setScannedToday, tabel]);
+    },[setScannedToday]);
 
     useEffect(() => {
         if (!loaded || !isScanTabActive || controlsRef.current) return;

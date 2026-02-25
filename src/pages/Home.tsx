@@ -34,6 +34,81 @@ const Home: React.FC = () => {
         }
     };
 
+    /*
+     4) Afișarea ultimei sincronizări
+        Dacă datele vin dintr-un fișier sau server, poți afișa:
+        - „Ultima actualizare: azi la 10:32”
+     1) Statistici rapide pentru ziua curentă
+        Un mic card cu:
+        - total elevi
+        - câți au fost scanați azi
+        - câți lipsesc
+        - câți au desert / câți nu
+        Ajută enorm la o privire rapidă asupra progresului.
+    3. O secțiune „Setări rapide”
+    Aici intră:
+    - Low Power Mode (toggle-ul actual)
+    - eventual un toggle pentru „Sunet la scanare”
+    - un toggle pentru „Vibrație la scanare” (dacă vrei feedback haptic pe mobile)
+    Operatorii apreciază setările rapide, mai ales când sunt sub presiune.
+    5. Un card „Ultima actualizare a datelor”
+    Dacă datele vin dintr-un fișier sau sunt regenerate:
+    - „Ultima actualizare: azi la 12:03”
+    - „Sursa: local / server / fișier”
+    Ajută operatorul să știe dacă lucrează cu date proaspete.
+    Indicator „Flux activ”
+Un mic badge sau icon care arată:
+- „Cantina este deschisă acum”
+- „Program închis” (în afara orelor)
+Poți seta automat în funcție de ora curentă (ex. 12:00–14:00).
+ Confirmare pentru Reset Data
+În loc să resetezi instant, poți avea:
+- un dialog cu două opțiuni: „Resetează doar scanările de azi” și „Reset complet tabel”
+Operatorii greșesc uneori apăsând butoane, iar asta previne pierderi de date.
+Gruparea în secțiuni
+În loc de elemente dispersate, poți avea:
+- Statistici
+- Setări rapide
+- Acțiuni
+- Informații
+Structura ajută operatorul să navigheze rapid.
+
+
+
+────────────────────────────────
+  Home
+────────────────────────────────
+
+┌──────────────────────────────┐
+│ 📊 STATISTICI                │
+│ Total elevi: 320             │
+│ Scanați azi: 180             │
+│ Lipsă: 12                    │
+│ Desert: 90 / 230             │
+└──────────────────────────────┘
+
+┌──────────────────────────────┐
+│ ⚙️ SETĂRI RAPIDE             │
+│ Low Power Mode      [toggle] │
+│ Sunet scanare       [toggle] │
+│ Vibrație scanare    [toggle] │
+└──────────────────────────────┘
+
+┌──────────────────────────────┐
+│ 🧰 ACȚIUNI                   │
+│ [ Reset Data ]               │
+│ [ Test Alertă ]              │
+└──────────────────────────────┘
+
+┌──────────────────────────────┐
+│ ℹ️ INFORMAȚII                │
+│ Ultima actualizare: 12:03    │
+│ Sursa: server                │
+│ Cantina: DESCHISĂ            │
+└──────────────────────────────┘
+    * */
+
+
     return (
         <IonPage>
             <IonHeader>

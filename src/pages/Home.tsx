@@ -1,13 +1,24 @@
 import {
     IonAlert,
-    IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote,
-    IonPage, IonText,
+    IonBadge,
+    IonButton,
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle,
+    IonContent,
+    IonHeader,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonNote,
+    IonPage,
     IonTitle,
     IonToggle,
     IonToolbar
 } from '@ionic/react';
 import './Home.css';
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {useScanSettings} from "../contexts/SettingsContext";
 import {useTabel} from "../contexts/TabelContext";
 import {createTestData, loadTabel} from "../storage/storage";
@@ -20,8 +31,25 @@ const rainbowStyle = {
 
 
 const Home: React.FC = () => {
-    const {scanMode , setScanMode} = useScanSettings();
-    const { setTabel } = useTabel();
+    const {scanMode , setScanMode, sunetScanare, setSunetScanare, vibratieScanare, setVibratieScanare} = useScanSettings();
+    const { tabel , setTabel , scannedToday} = useTabel();
+    const today = [0, 6].includes(new Date().getDay()) ? 1 : new Date().getDay();
+    const numarDesertElevi = tabel.filter(elev => elev.flags[0] && elev.flags[today]).length;
+    const numarElevi = tabel.filter(elev => elev.flags[today]).length;
+    const scanatiAzi = scannedToday.length;
+    const [now, setNow] = useState(new Date());
+    const cantinaActiva =
+        now.getDay() >= 1 &&
+        now.getDay() <= 5 &&
+        now.getHours() === 13 &&
+        now.getMinutes() <= 25;
+
+
+    useEffect(() => {
+        const id = setInterval(() => setNow(new Date()), 5000); // update every 5s
+        return () => clearInterval(id);
+    }, []);
+
 
     const handleReset = async () => {
         await createTestData();
@@ -32,77 +60,22 @@ const Home: React.FC = () => {
     };
 
     /*
-     4) Afișarea ultimei sincronizări
-        Dacă datele vin dintr-un fișier sau server, poți afișa:
-        - „Ultima actualizare: azi la 10:32”
-     1) Statistici rapide pentru ziua curentă
-        Un mic card cu:
-        - total elevi
-        - câți au fost scanați azi
-        - câți lipsesc
-        - câți au desert / câți nu
-        Ajută enorm la o privire rapidă asupra progresului.
-    3. O secțiune „Setări rapide”
-    Aici intră:
-    - Low Power Mode (toggle-ul actual)
-    - eventual un toggle pentru „Sunet la scanare”
-    - un toggle pentru „Vibrație la scanare” (dacă vrei feedback haptic pe mobile)
-    Operatorii apreciază setările rapide, mai ales când sunt sub presiune.
+
     5. Un card „Ultima actualizare a datelor”
     Dacă datele vin dintr-un fișier sau sunt regenerate:
     - „Ultima actualizare: azi la 12:03”
     - „Sursa: local / server / fișier”
     Ajută operatorul să știe dacă lucrează cu date proaspete.
+
     Indicator „Flux activ”
 Un mic badge sau icon care arată:
 - „Cantina este deschisă acum”
 - „Program închis” (în afara orelor)
-Poți seta automat în funcție de ora curentă (ex. 12:00–14:00).
+
  Confirmare pentru Reset Data
 În loc să resetezi instant, poți avea:
 - un dialog cu două opțiuni: „Resetează doar scanările de azi” și „Reset complet tabel”
-Operatorii greșesc uneori apăsând butoane, iar asta previne pierderi de date.
-Gruparea în secțiuni
-În loc de elemente dispersate, poți avea:
-- Statistici
-- Setări rapide
-- Acțiuni
-- Informații
-Structura ajută operatorul să navigheze rapid.
 
-
-
-────────────────────────────────
-  Home
-────────────────────────────────
-
-┌──────────────────────────────┐
-│ 📊 STATISTICI                │
-│ Total elevi: 320             │
-│ Scanați azi: 180             │
-│ Lipsă: 12                    │
-│ Desert: 90 / 230             │
-└──────────────────────────────┘
-
-┌──────────────────────────────┐
-│ ⚙️ SETĂRI RAPIDE             │
-│ Low Power Mode      [toggle] │
-│ Sunet scanare       [toggle] │
-│ Vibrație scanare    [toggle] │
-└──────────────────────────────┘
-
-┌──────────────────────────────┐
-│ 🧰 ACȚIUNI                   │
-│ [ Reset Data ]               │
-│ [ Test Alertă ]              │
-└──────────────────────────────┘
-
-┌──────────────────────────────┐
-│ ℹ️ INFORMAȚII                │
-│ Ultima actualizare: 12:03    │
-│ Sursa: server                │
-│ Cantina: DESCHISĂ            │
-└──────────────────────────────┘
     * */
 
 
@@ -116,7 +89,7 @@ Structura ajută operatorul să navigheze rapid.
                     <IonTitle style={{fontSize: "32px"}}>Home</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <IonContent scrollY={false} forceOverscroll={false}>
+            <IonContent scrollY={true} forceOverscroll={false}> {/*modificat temp*/}
                 <IonCard>
                     <IonCardHeader>
                         <IonCardTitle>Statistici</IonCardTitle>
@@ -125,17 +98,17 @@ Structura ajută operatorul să navigheze rapid.
                         <IonList lines="none">
                             <IonItem>
                                 <IonLabel>Total Elevi</IonLabel>
-                                <IonNote>300</IonNote>
+                                <IonNote>{numarElevi}</IonNote>
                             </IonItem>
 
                             <IonItem>
                                 <IonLabel>Desert</IonLabel>
-                                <IonNote>200</IonNote>
+                                <IonNote>{numarDesertElevi}/{numarElevi}</IonNote>
                             </IonItem>
 
                             <IonItem>
                                 <IonLabel>Total Scanați</IonLabel>
-                                <IonNote>102</IonNote>
+                                <IonNote>{scanatiAzi}</IonNote>
                             </IonItem>
                         </IonList>
                     </IonCardContent>
@@ -155,15 +128,15 @@ Structura ajută operatorul să navigheze rapid.
                             </IonItem>
                             <IonItem>
                                 <IonToggle
-                                    checked={scanMode === "battery"}
-                                    onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                                    checked={sunetScanare}
+                                    onIonChange={(e) => setSunetScanare(!e)}
                                 >Sunet Scanare
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
                                 <IonToggle
-                                    checked={scanMode === "battery"}
-                                    onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                                    checked={vibratieScanare}
+                                    onIonChange={(e) => setVibratieScanare(!e)}
                                 >Vibratie Scanare
                                 </IonToggle>
                             </IonItem>
@@ -172,17 +145,30 @@ Structura ajută operatorul să navigheze rapid.
                 </IonCard>
                 <IonCard>
                     <IonCardHeader>
-                        <IonCardTitle>Extra</IonCardTitle>
+                        <IonCardTitle>Actiuni</IonCardTitle>
+                    </IonCardHeader>
+                    <IonButton id="present-alert">Test Alerta</IonButton>
+                    <IonButton onClick={() => void handleReset()}>Reset Data</IonButton>
+                </IonCard>
+                <IonCard>
+                    <IonCardHeader>
+                        <IonCardTitle>Informatii</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                         <IonList lines="none">
                             <IonItem>
-                                <IonLabel>Ultima actualizare</IonLabel>
+                                <IonLabel>Ultima actualizare:</IonLabel>
                                 <IonNote>12:07</IonNote>
                             </IonItem>
                             <IonItem>
-                                <IonButton id="present-alert">Test Alerta</IonButton>
-                                <IonButton slot="end" onClick={() => void handleReset()}>Reset Data</IonButton>
+                                <IonLabel>Sursa:</IonLabel>
+                                <IonNote>server</IonNote>
+                            </IonItem>
+                            <IonItem>
+                                <IonLabel>Cantina: </IonLabel>
+                                <IonNote>
+                                    <IonBadge color={cantinaActiva ? "success" : "danger"}>{cantinaActiva ? "DESCHISA" : "INCHISA"}</IonBadge>
+                                </IonNote>
                             </IonItem>
                         </IonList>
                     </IonCardContent>

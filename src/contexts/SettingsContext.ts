@@ -5,6 +5,13 @@ export type ScanMode = "battery" | "instant";
 export interface ScanSettings {
     scanMode: ScanMode;
     setScanMode: (mode: ScanMode) => void;
+
+    sunetScanare: boolean;
+    setSunetScanare: (sunet: boolean) => void;
+
+    vibratieScanare: boolean;
+    setVibratieScanare: (vibratie: boolean) => void;
+
     isScanTabActive: boolean;
     setIsScanTabActive: (active: boolean) => void;
 }

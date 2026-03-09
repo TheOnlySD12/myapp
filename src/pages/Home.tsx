@@ -67,10 +67,6 @@ const Home: React.FC = () => {
     - „Sursa: local / server / fișier”
     Ajută operatorul să știe dacă lucrează cu date proaspete.
 
-    Indicator „Flux activ”
-Un mic badge sau icon care arată:
-- „Cantina este deschisă acum”
-- „Program închis” (în afara orelor)
 
  Confirmare pentru Reset Data
 În loc să resetezi instant, poți avea:

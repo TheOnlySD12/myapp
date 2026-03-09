@@ -54,12 +54,13 @@ const Scan: React.FC = () => {
     const { tabel, setTabel, loaded, scannedToday, setScannedToday , clearScannedForToday} = useTabel();
     const tabelRef = useRef(tabel);
 
-    const { setIsScanTabActive, scanMode, isScanTabActive , vibratieScanare} = useScanSettings();
+    const { setIsScanTabActive, scanMode, isScanTabActive , vibratieScanare, sunetScanare} = useScanSettings();
     const scanModeRef = useRef(scanMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
     const [showHistory, setShowHistory] = useState(false);
     const [ignoreFinish, setIgnoreFinish] = useState(false);
     const showDone = !(tabel.length - scannedToday.length) && !ignoreFinish;
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useIonViewDidEnter(() => {
         setIsScanTabActive(true);
@@ -80,6 +81,9 @@ const Scan: React.FC = () => {
     useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
     useEffect(() => { tabelRef.current = tabel; }, [tabel]);
     useEffect(() => {lastScanListRef.current = scannedToday || []; }, [scannedToday]);
+    useEffect(() => {
+        audioRef.current = new Audio("/scan.mp3");
+    }, []);
 
     const handleScan = useCallback(async (text: string) => {
         if (!isScanTabActiveRef.current) return;
@@ -92,6 +96,7 @@ const Scan: React.FC = () => {
 
         if(elevFound){
             if(vibratieScanare) navigator.vibrate(200);
+            if(sunetScanare) await audioRef.current?.play()
             if(!alreadyScanned){
                 const updatedList = [...lastScanListRef.current, text]
                 lastScanListRef.current = updatedList;
@@ -113,7 +118,7 @@ const Scan: React.FC = () => {
                 azi: false
             });
         }
-    },[setScannedToday, vibratieScanare]);
+    },[setScannedToday, sunetScanare, vibratieScanare]);
 
     useEffect(() => {
         if (!loaded || !isScanTabActive || controlsRef.current) return;

@@ -191,7 +191,7 @@ const Home: React.FC = () => {
                     <IonTitle style={{fontSize: "32px"}}>Home</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <IonContent scrollY={false} forceOverscroll={false}>
+            <IonContent scrollY={true} forceOverscroll={false}>
                 <IonCard>
                     <IonCardHeader>
                         <IonCardTitle>Statistici</IonCardTitle>
@@ -217,7 +217,7 @@ const Home: React.FC = () => {
                 </IonCard>
                 <IonCard >
                     <IonCardHeader>
-                        <IonCardTitle>Setari</IonCardTitle>
+                        <IonCardTitle>Setări</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                         <IonList lines="none" >
@@ -225,7 +225,7 @@ const Home: React.FC = () => {
                                 <IonToggle
                                     checked={scanMode === "battery"}
                                     onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
-                                >Low Power Mode
+                                >Mod Consum Redus
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
@@ -249,8 +249,8 @@ const Home: React.FC = () => {
                     <IonCardHeader>
                         <IonCardTitle>Actiuni</IonCardTitle>
                     </IonCardHeader>
-                    <IonButton >Update</IonButton>
-                    <IonButton onClick={() => setShowOptionsSheet(true)}>Reset Data</IonButton>
+                    <IonButton >Actualizează</IonButton>
+                    <IonButton onClick={() => setShowOptionsSheet(true)}>Opțiuni Date</IonButton>
                 </IonCard>
                 <IonCard>
                     <IonCardHeader>
@@ -269,7 +269,7 @@ const Home: React.FC = () => {
                             <IonItem>
                                 <IonLabel>Cantina: </IonLabel>
                                 <IonNote>
-                                    <IonBadge color={cantinaActiva ? "success" : "danger"}>{cantinaActiva ? "DESCHISA" : "INCHISA"}</IonBadge>
+                                    <IonBadge color={cantinaActiva ? "success" : "danger"}>{cantinaActiva ? "DESCHISĂ" : "INCHISĂ"}</IonBadge>
                                 </IonNote>
                             </IonItem>
                         </IonList>
@@ -281,22 +281,22 @@ const Home: React.FC = () => {
                     header="Data Options"
                     buttons={[
                         {
-                            text: 'Reseteaza tabelul',
+                            text: 'Resetează tabelul',
                             handler: () => void handleResetTabel(),
                         },
                         {
-                            text: 'Reseteaza scanari',
+                            text: 'Resetează scanari',
                             handler: () => clearScannedForToday(),
                         },
                         {
-                            text: 'Export Data',
+                            text: 'Export Date',
                             handler: () => {
-                                setShowOptionsSheet(false);   // închizi primul
-                                setShowFormatSheet(true);     // deschizi al doilea
+                                setShowOptionsSheet(false);
+                                setShowFormatSheet(true);
                             },
                         },
                         {
-                            text: 'Cancel',
+                            text: 'Anulează',
                             role: 'cancel'
                         },
                     ]}

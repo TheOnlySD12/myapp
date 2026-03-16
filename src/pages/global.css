@@ -1,0 +1,56 @@
+:root {
+    --ion-font-family: 'Century Schoolbook'
+}
+
+ion-tab-bar {
+    --color: #7787d9;
+    --color-selected: #ffffee;
+}
+
+.rainbow {
+    background: linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF);
+    WebkitBackgroundClip: text;
+    WebkitTextFillColor: transparent;
+}
+
+.main-title {
+    font-size: 32px;
+}
+
+.home-page ion-card {
+    margin: 12px 10px;
+    box-shadow: none;
+    border: none;
+}
+
+.home-page ion-card-header,
+.home-page ion-card-content {
+    padding: 5px 10px;
+}
+
+.home-page ion-card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fffefe;
+}
+
+.home-page ion-item::part(native) {
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.home-page ion-item {
+    --background: transparent;
+    --min-height: 28px;
+    --inner-border-width: 0px;
+    --border-width: 0px;
+}
+
+.home-page ion-list {
+    --background: #322d31;
+    background: #322d31;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+

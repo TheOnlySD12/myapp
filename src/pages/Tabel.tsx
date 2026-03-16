@@ -228,11 +228,11 @@ const Tabel: React.FC = () => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar style={{ borderBottom: '0.5px solid #262626' }}>
+                <IonToolbar className="spacer">
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
                 <IonToolbar>
-                    <IonTitle style={{fontSize: "32px"}}>Tabel</IonTitle>
+                    <IonTitle className="main-title">Tabel</IonTitle>
                     <IonButtons slot="start">
                         <IonButton onClick={() => {
                             setMode(prev => {
@@ -283,7 +283,7 @@ const Tabel: React.FC = () => {
                         setQuery(value.toLowerCase());
                     }}></IonSearchbar>
                 </IonToolbar>
-                {edit && <IonToolbar style={{ borderTop: '0.5px solid #262626' }}>
+                {edit && <IonToolbar>
                     <IonButtons slot="start">
                         <IonButton onClick={() => {
                             if (!draft) return;

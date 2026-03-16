@@ -9,8 +9,12 @@ ion-tab-bar {
 
 .rainbow {
     background: linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF);
-    WebkitBackgroundClip: text;
-    WebkitTextFillColor: transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+ion-toolbar.spacer {
+    border-bottom: 0.5px solid #262626;
 }
 
 .main-title {

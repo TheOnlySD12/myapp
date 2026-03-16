@@ -165,11 +165,11 @@ const Scan: React.FC = () => {
     return (
         <IonPage>
             <IonHeader>
-                <IonToolbar style={{ borderBottom: '0.5px solid #262626' }}>
+                <IonToolbar className="spacer">
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
                 <IonToolbar>
-                    <IonTitle style={{fontSize: "32px"}}>Scan</IonTitle>
+                    <IonTitle className="main-title">Scan</IonTitle>
                     <IonButtons slot="start">
                         <IonButton
                             onClick={async () => {

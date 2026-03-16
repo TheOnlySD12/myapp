@@ -17,18 +17,12 @@ import {
     IonToggle,
     IonToolbar
 } from '@ionic/react';
-import './Home.css';
+import './global.css';
 import React, {useEffect, useState} from "react";
 import {useScanSettings} from "../contexts/SettingsContext";
 import {useTabel} from "../contexts/TabelContext";
 import {createTestData, loadBaseline, loadTabel} from "../storage/storage";
 import * as XLSX from "xlsx";
-
-/*const rainbowStyle = {
-    background: "linear-gradient(to right, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent"
-}*/
 
 
 const Home: React.FC = () => {
@@ -182,16 +176,16 @@ const Home: React.FC = () => {
 
 
     return (
-        <IonPage>
+        <IonPage className="home-page">
             <IonHeader>
-                <IonToolbar style={{ borderBottom: '0.5px solid #262626' }}>
+                <IonToolbar className="spacer">
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
                 <IonToolbar>
-                    <IonTitle style={{fontSize: "32px"}}>Home</IonTitle>
+                    <IonTitle className="main-title">Home</IonTitle>
                 </IonToolbar>
             </IonHeader>
-            <IonContent scrollY={true} forceOverscroll={false}>
+            <IonContent scrollY={false} forceOverscroll={false}>
                 <IonCard>
                     <IonCardHeader>
                         <IonCardTitle>Statistici</IonCardTitle>
@@ -231,14 +225,14 @@ const Home: React.FC = () => {
                             <IonItem>
                                 <IonToggle
                                     checked={sunetScanare}
-                                    onIonChange={(e) => setSunetScanare(!e)}
+                                    onIonChange={(e) => setSunetScanare(!e.detail.checked)}
                                 >Sunet Scanare
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
                                 <IonToggle
                                     checked={vibratieScanare}
-                                    onIonChange={(e) => setVibratieScanare(!e)}
+                                    onIonChange={(e) => setVibratieScanare(!e.detail.checked)}
                                 >Vibratie Scanare
                                 </IonToggle>
                             </IonItem>
@@ -249,8 +243,10 @@ const Home: React.FC = () => {
                     <IonCardHeader>
                         <IonCardTitle>Actiuni</IonCardTitle>
                     </IonCardHeader>
-                    <IonButton >Actualizează</IonButton>
-                    <IonButton onClick={() => setShowOptionsSheet(true)}>Opțiuni Date</IonButton>
+                    <div style={{display: "flex", justifyContent: "center", gap: "12px"}}>
+                        <IonButton id="present-alert" fill="outline" color="medium">Actualizare</IonButton>
+                        <IonButton onClick={() => setShowOptionsSheet(true)} fill="outline" color="medium">Optiuni Date</IonButton>
+                    </div>
                 </IonCard>
                 <IonCard>
                     <IonCardHeader>
@@ -321,7 +317,6 @@ const Home: React.FC = () => {
                     ]}
                 />
             </IonContent>
-
         </IonPage>
     );
 };

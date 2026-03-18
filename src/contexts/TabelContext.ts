@@ -9,6 +9,7 @@ export type TabelContextType = {
     scannedToday: string[]; // list of names scanned today
     setScannedToday: (list: string[]) => void;
     clearScannedForToday: () => void;
+    checkDateAndSync: (options?: { forceFetch?: boolean }) => Promise<void>;
 };
 
 export const TabelContext = createContext<TabelContextType | undefined>(

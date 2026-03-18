@@ -11,70 +11,98 @@ import {
 import { TabelContext } from "./TabelContext";
 import {IonLoading} from "@ionic/react";
 
+const coloane = {
+    name: "Vă rugăm să alegeți din listă numele elevului:",
+    class: "Alegeți clasa din care faceți parte:",
+    menu: "Selectați tipul de meniu preferat:",
+    luni: "Selectați zilele în care doriți servirea mesei: [Luni]",
+    marti: "Selectați zilele în care doriți servirea mesei: [Marți]",
+    miercuri: "Selectați zilele în care doriți servirea mesei: [Miercuri]",
+    joi: "Selectați zilele în care doriți servirea mesei: [Joi]",
+    vineri: "Selectați zilele în care doriți servirea mesei: [Vineri]",
+};
+
 export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [tabel, setTabelState] = useState<Elev[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [scannedToday, setScannedTodayState] = useState<string[]>([]);
 
-    function getWeekNumber(dateStr: string): number {
-        const d = new Date(dateStr);
-        const firstDay = new Date(d.getFullYear(), 0, 1);
-        const pastDays = (d.getTime() - firstDay.getTime()) / 86400000;  // de verificat sistem
-        return Math.ceil((pastDays + firstDay.getDay() + 1) / 7);
+    function getWeekStart(input: Date | string): number {
+        let d: Date;
+
+        if (typeof input === "string") {
+            const [y, m, day] = input.split("-").map(Number);
+            d = new Date(y, m - 1, day);
+        } else {
+            d = new Date(input);
+        }
+
+        const dayOfWeek = (d.getDay() + 6) % 7;
+        d.setDate(d.getDate() - dayOfWeek);
+        d.setHours(0, 0, 0, 0);
+
+        return d.getTime();
+    }
+
+    function getTodayStrRO(): string {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
     }
 
     async function fetchFromSheet(): Promise<Elev[]> {
         const res = await fetch("https://sheetdb.io/api/v1/XXXX");
-        const data = await res.json();
+        const data: Record<string, string>[] = await res.json();
 
-        return data.map((row: any) => ({
-            name: row.name,
-            class: row.class,
+        return data.map(row => ({
+            name: row[coloane.name] || "",
+            class: row[coloane.class] || "",
             flags: [
-                row.flag1 === "TRUE",
-                row.flag2 === "TRUE",
-                row.flag3 === "TRUE", //de gandit pe baza sheetului
-                row.flag4 === "TRUE",
-                row.flag5 === "TRUE",
-                row.flag6 === "TRUE",
-            ]
+                row[coloane.menu]?.includes("1") ?? false, // desert
+                row[coloane.luni] === "Da",
+                row[coloane.marti] === "Da",
+                row[coloane.miercuri] === "Da",
+                row[coloane.joi] === "Da",
+                row[coloane.vineri] === "Da",
+            ] as [boolean, boolean, boolean, boolean, boolean, boolean],
         }));
     }
 
-    const checkDateAndSync = useCallback(async () => {
-        const today = new Date().toISOString().slice(0, 10);
+    const checkDateAndSync = useCallback(async (options?: { forceFetch?: boolean }) => {
+        const { forceFetch = false } = options || {};
+
+        const todayStr = getTodayStrRO();
         const savedDate = await loadScanDate();
 
-        const currentWeek = getWeekNumber(today);
-        const savedWeek = savedDate ? getWeekNumber(savedDate) : null;
+        const currentWeek = getWeekStart(todayStr);
+        const savedWeek = savedDate ? getWeekStart(savedDate) : null;
 
         //first run
         if (!savedDate) {
-            await saveScanDate(today);
+            await saveScanDate(todayStr);
             return;
         }
 
-        if (currentWeek !== savedWeek) {
+        if (currentWeek !== savedWeek || forceFetch) {
             try {
-                const freshData = await fetchFromSheet(); // or skip if offline
-                setTabelState(freshData);
+                const freshData = await fetchFromSheet(); //skip daca offline
                 await saveTabel(freshData);
             } catch (e) {
                 console.warn("Failed to fetch new weekly data", e);
             }
 
             await saveScannedToday([]);
-            setScannedTodayState([]);
-            await saveScanDate(today);
+            await saveScanDate(todayStr);
             return;
         }
 
-        if (savedDate !== today) {
+        if (savedDate !== todayStr) {
             await saveScannedToday([]);
-            setScannedTodayState([]);
-            await saveScanDate(today);
+            await saveScanDate(todayStr);
         }
-    }, []);
+    },[])
 
     useEffect(() => {
         const init = async () => {
@@ -84,7 +112,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const savedList = await loadScannedToday();
             setScannedTodayState(savedList || []);
 
-            await checkDateAndSync(); // centralized logic
+            await checkDateAndSync();
             setLoaded(true);
         };
 
@@ -102,10 +130,9 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, []);
 
     const clearScannedForToday = useCallback(() => {
-        const today = new Date().toISOString().slice(0, 10);
         setScannedTodayState([]);
         void saveScannedToday([]);
-        void saveScanDate(today);
+        void saveScanDate(getTodayStrRO());
     }, []);
 
     return (
@@ -116,7 +143,8 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 loaded,
                 scannedToday,
                 setScannedToday,
-                clearScannedForToday
+                clearScannedForToday,
+                checkDateAndSync,
             }}>
                 {children}
             </TabelContext.Provider>

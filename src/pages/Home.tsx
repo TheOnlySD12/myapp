@@ -27,7 +27,7 @@ import * as XLSX from "xlsx";
 
 const Home: React.FC = () => {
     const {scanMode , setScanMode, sunetScanare, setSunetScanare, vibratieScanare, setVibratieScanare} = useScanSettings();
-    const { tabel , setTabel , scannedToday, clearScannedForToday} = useTabel();
+    const { tabel , setTabel , scannedToday, clearScannedForToday, checkDateAndSync} = useTabel();
     const today = [0, 6].includes(new Date().getDay()) ? 1 : new Date().getDay();
     const numarDesertElevi = tabel.filter(elev => elev.flags[0] && elev.flags[today]).length;
     const numarElevi = tabel.filter(elev => elev.flags[today]).length;
@@ -244,7 +244,7 @@ const Home: React.FC = () => {
                         <IonCardTitle>Actiuni</IonCardTitle>
                     </IonCardHeader>
                     <div style={{display: "flex", justifyContent: "center", gap: "12px"}}>
-                        <IonButton id="present-alert" fill="outline" color="medium">Actualizare</IonButton>
+                        <IonButton onClick={() => checkDateAndSync({forceFetch: true})}  fill="outline" color="medium">Actualizare</IonButton>
                         <IonButton onClick={() => setShowOptionsSheet(true)} fill="outline" color="medium">Optiuni Date</IonButton>
                     </div>
                 </IonCard>

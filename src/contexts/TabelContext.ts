@@ -4,7 +4,6 @@ import { Elev } from "../storage/storage";
 export type TabelContextType = {
     tabel: Elev[];
     setTabel: (data: Elev[]) => void;
-    reload: () => Promise<void>;
     loaded: boolean;
 
     scannedToday: string[]; // list of names scanned today

@@ -225,14 +225,14 @@ const Home: React.FC = () => {
                             <IonItem>
                                 <IonToggle
                                     checked={sunetScanare}
-                                    onIonChange={(e) => setSunetScanare(!e.detail.checked)}
+                                    onIonChange={(e) => setSunetScanare(e.detail.checked)}
                                 >Sunet Scanare
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
                                 <IonToggle
                                     checked={vibratieScanare}
-                                    onIonChange={(e) => setVibratieScanare(!e.detail.checked)}
+                                    onIonChange={(e) => setVibratieScanare(e.detail.checked)}
                                 >Vibratie Scanare
                                 </IonToggle>
                             </IonItem>

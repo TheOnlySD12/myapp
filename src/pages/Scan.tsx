@@ -189,7 +189,7 @@ const Scan: React.FC = () => {
                     </IonButtons>
                 </IonToolbar>
             </IonHeader>
-            <IonContent scrollY={false} forceOverscroll={false}>
+            <IonContent scrollY={true} forceOverscroll={false}>
                 <video
                     ref={videoRef}
                     autoPlay
@@ -251,7 +251,7 @@ const Scan: React.FC = () => {
                     >
                         <IonCardHeader>
                             <IonCardTitle>Success! Gata pe azi.</IonCardTitle>
-                            <IonCardSubtitle>data de azi</IonCardSubtitle>
+                            <IonCardSubtitle>{new Date().toDateString()}</IonCardSubtitle>
                         </IonCardHeader>
                         <IonCardContent>
                             <IonButton onClick={() => setIgnoreFinish(true)}>Close</IonButton>

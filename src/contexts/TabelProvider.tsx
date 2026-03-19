@@ -9,7 +9,7 @@ import {
     saveTabel
 } from "../storage/storage";
 import { TabelContext } from "./TabelContext";
-import {IonLoading} from "@ionic/react";
+import {IonAlert, IonLoading} from "@ionic/react";
 
 const coloane = {
     name: "Vă rugăm să alegeți din listă numele elevului:",
@@ -22,87 +22,112 @@ const coloane = {
     vineri: "Selectați zilele în care doriți servirea mesei: [Vineri]",
 };
 
+function getWeekStart(input: Date | string): number {
+    let d: Date;
+
+    if (typeof input === "string") {
+        const [y, m, day] = input.split("-").map(Number);
+        d = new Date(y, m - 1, day);
+    } else {
+        d = new Date(input);
+    }
+
+    const dayOfWeek = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - dayOfWeek);
+    d.setHours(0, 0, 0, 0);
+
+    return d.getTime();
+}
+
+function getTodayStrRO(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+async function fetchFromSheet(): Promise<Elev[]> {
+    const res = await fetch("https://sheetdb.io/api/v1/XXXX");
+
+    if (!res.ok) throw new Error("Failed to fetch");
+
+    const data: Record<string, string>[] = await res.json();
+
+    return data.map(row => ({
+        name: row[coloane.name] || "",
+        class: row[coloane.class] || "",
+        flags: [
+            row[coloane.menu]?.includes("1") ?? false, // desert
+            row[coloane.luni] === "Da",
+            row[coloane.marti] === "Da",
+            row[coloane.miercuri] === "Da",
+            row[coloane.joi] === "Da",
+            row[coloane.vineri] === "Da",
+        ] as [boolean, boolean, boolean, boolean, boolean, boolean],
+    }));
+}
+
 export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [tabel, setTabelState] = useState<Elev[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [scannedToday, setScannedTodayState] = useState<string[]>([]);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    function getWeekStart(input: Date | string): number {
-        let d: Date;
+    const checkDateAndSync = useCallback(
+        async (options?: { forceFetch?: boolean }) => {
+            const { forceFetch = false } = options || {};
+            const todayStr = getTodayStrRO();
 
-        if (typeof input === "string") {
-            const [y, m, day] = input.split("-").map(Number);
-            d = new Date(y, m - 1, day);
-        } else {
-            d = new Date(input);
-        }
-
-        const dayOfWeek = (d.getDay() + 6) % 7;
-        d.setDate(d.getDate() - dayOfWeek);
-        d.setHours(0, 0, 0, 0);
-
-        return d.getTime();
-    }
-
-    function getTodayStrRO(): string {
-        const d = new Date();
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
-    }
-
-    async function fetchFromSheet(): Promise<Elev[]> {
-        const res = await fetch("https://sheetdb.io/api/v1/XXXX");
-        const data: Record<string, string>[] = await res.json();
-
-        return data.map(row => ({
-            name: row[coloane.name] || "",
-            class: row[coloane.class] || "",
-            flags: [
-                row[coloane.menu]?.includes("1") ?? false, // desert
-                row[coloane.luni] === "Da",
-                row[coloane.marti] === "Da",
-                row[coloane.miercuri] === "Da",
-                row[coloane.joi] === "Da",
-                row[coloane.vineri] === "Da",
-            ] as [boolean, boolean, boolean, boolean, boolean, boolean],
-        }));
-    }
-
-    const checkDateAndSync = useCallback(async (options?: { forceFetch?: boolean }) => {
-        const { forceFetch = false } = options || {};
-
-        const todayStr = getTodayStrRO();
-        const savedDate = await loadScanDate();
-
-        const currentWeek = getWeekStart(todayStr);
-        const savedWeek = savedDate ? getWeekStart(savedDate) : null;
-
-        //first run
-        if (!savedDate) {
-            await saveScanDate(todayStr);
-            return;
-        }
-
-        if (currentWeek !== savedWeek || forceFetch) {
-            try {
-                const freshData = await fetchFromSheet(); //skip daca offline
-                await saveTabel(freshData);
-            } catch (e) {
-                console.warn("Failed to fetch new weekly data", e);
+            if (forceFetch) {
+                try {
+                    const freshData = await fetchFromSheet();
+                    await saveTabel(freshData);
+                    setTabelState(freshData);
+                } catch (e) {
+                    console.warn("Force fetch failed", e);
+                    setErrorMessage("Actualizarea tabelului a esuat.");
+                }
+                return;
             }
 
-            await saveScannedToday([]);
-            await saveScanDate(todayStr);
-            return;
-        }
+            const [savedDate, savedTabel] = await Promise.all([
+                loadScanDate(),
+                loadTabel()
+            ]);
 
-        if (savedDate !== todayStr) {
-            await saveScannedToday([]);
-            await saveScanDate(todayStr);
-        }
-    },[])
+            const currentWeek = getWeekStart(todayStr);
+            const savedWeek = savedDate ? getWeekStart(savedDate) : null;
+
+            const hasNoData = !savedDate || !savedTabel || savedTabel.length === 0;
+            const isNewWeek = savedWeek !== null && currentWeek !== savedWeek;
+            const isNewDay = savedDate !== todayStr;
+
+            if (hasNoData || isNewWeek) {
+                try {
+                    const freshData = await fetchFromSheet();
+                    await saveTabel(freshData);
+                    setTabelState(freshData);
+                } catch (e) {
+                    console.warn("Fetch failed, keeping old data", e);
+                    setErrorMessage("Actualizarea tabelului a esuat.");
+                }
+
+                await saveScannedToday([]);
+                setScannedTodayState([]);
+
+                await saveScanDate(todayStr);
+                return;
+            }
+
+            if (isNewDay) {
+                await saveScannedToday([]);
+                setScannedTodayState([]);
+
+                await saveScanDate(todayStr);
+                return;
+            }
+        }, []);
 
     useEffect(() => {
         const init = async () => {
@@ -135,6 +160,20 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         void saveScanDate(getTodayStrRO());
     }, []);
 
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") {
+                void checkDateAndSync();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
+    }, [checkDateAndSync]);
+
     return (
         <>
             <TabelContext.Provider value={{
@@ -149,6 +188,13 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 {children}
             </TabelContext.Provider>
             <IonLoading isOpen={!loaded} message="Loading data..." />
+            <IonAlert
+                isOpen={!!errorMessage}
+                onDidDismiss={() => setErrorMessage(null)}
+                header="Eroare"
+                message={errorMessage || ""}
+                buttons={["OK"]}
+            />
         </>
     );
 };

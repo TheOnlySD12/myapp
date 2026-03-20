@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 
 
 const Home: React.FC = () => {
-    const {scanMode , setScanMode, sunetScanare, setSunetScanare, vibratieScanare, setVibratieScanare} = useScanSettings();
+    const {lowPowerMode , setLowPowerMode, sunetScanare, setSunetScanare, vibratieScanare, setVibratieScanare} = useScanSettings();
     const { tabel , setTabel , scannedToday, clearScannedForToday, checkDateAndSync} = useTabel();
     const today = [0, 6].includes(new Date().getDay()) ? 1 : new Date().getDay();
     const numarDesertElevi = tabel.filter(elev => elev.flags[0] && elev.flags[today]).length;
@@ -217,8 +217,8 @@ const Home: React.FC = () => {
                         <IonList lines="none" >
                             <IonItem>
                                 <IonToggle
-                                    checked={scanMode === "battery"}
-                                    onIonChange={(e) => setScanMode(e.detail.checked ? "battery" : "instant")}
+                                    checked={lowPowerMode}
+                                    onIonChange={(e) => setLowPowerMode(e.detail.checked)}
                                 >Mod Consum Redus
                                 </IonToggle>
                             </IonItem>

@@ -1,10 +1,8 @@
 import { createContext, useContext } from "react";
 
-export type ScanMode = "battery" | "instant";
-
 export interface ScanSettings {
-    scanMode: ScanMode;
-    setScanMode: (mode: ScanMode) => void;
+    lowPowerMode: boolean;
+    setLowPowerMode: (lowPower: boolean) => void;
 
     sunetScanare: boolean;
     setSunetScanare: (sunet: boolean) => void;

@@ -54,8 +54,8 @@ const Scan: React.FC = () => {
     const { tabel, setTabel, loaded, scannedToday, setScannedToday , clearScannedForToday} = useTabel();
     const tabelRef = useRef(tabel);
 
-    const { setIsScanTabActive, scanMode, isScanTabActive , vibratieScanare, sunetScanare} = useScanSettings();
-    const scanModeRef = useRef(scanMode);
+    const { setIsScanTabActive, lowPowerMode, isScanTabActive , vibratieScanare, sunetScanare} = useScanSettings();
+    const lowPowerModeRef = useRef(lowPowerMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
     const [showHistory, setShowHistory] = useState(false);
     const [ignoreFinish, setIgnoreFinish] = useState(false);
@@ -71,13 +71,13 @@ const Scan: React.FC = () => {
         setResult(null);
         lastScanRef.current = null;
 
-        if(scanModeRef.current == "battery"){
+        if(lowPowerModeRef.current){
             controlsRef.current?.stop();
             controlsRef.current = null;
         }
     });
 
-    useEffect(() => { scanModeRef.current = scanMode; }, [scanMode]);
+    useEffect(() => { lowPowerModeRef.current = lowPowerMode; }, [lowPowerMode]);
     useEffect(() => { isScanTabActiveRef.current = isScanTabActive; }, [isScanTabActive]);
     useEffect(() => { tabelRef.current = tabel; }, [tabel]);
     useEffect(() => {lastScanListRef.current = scannedToday || []; }, [scannedToday]);
@@ -137,11 +137,11 @@ const Scan: React.FC = () => {
     }, [handleScan, isScanTabActive, loaded]);
 
     useEffect(() => {
-        if (!isScanTabActive && scanModeRef.current === "battery") {
+        if (!isScanTabActive && lowPowerModeRef.current) {
             controlsRef.current?.stop();
             controlsRef.current = null;
         }
-    }, [isScanTabActive, scanMode]);
+    }, [isScanTabActive, lowPowerMode]);
 
 
     function updateFlag(name: string) {

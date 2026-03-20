@@ -6,6 +6,13 @@ export type Elev = {
     flags: [boolean, boolean, boolean, boolean, boolean, boolean]; //6
 };
 
+export type Settings = {
+    low_power: boolean;
+    sunet: boolean;
+    vibratie: boolean;
+};
+
+
 let store: Storage | null = null;
 
 async function getStore(): Promise<Storage> {
@@ -105,4 +112,18 @@ export async function loadScanDate(): Promise<string | null> {
 export async function saveScanDate(date: string): Promise<void> {
     const s = await getStore();
     await s.set('scanDate', date);
+}
+
+export async function loadSettings(): Promise<Settings> {
+    const s = await getStore();
+    return (await s.get('settings')) ?? {
+        low_power: false,
+        sunet: true,
+        vibratie: true
+    };
+}
+
+export async function saveSettings(settings: Settings): Promise<void> {
+    const s = await getStore();
+    await s.set('settings', settings);
 }

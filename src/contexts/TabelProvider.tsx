@@ -108,6 +108,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     const freshData = await fetchFromSheet();
                     await saveTabel(freshData);
                     setTabelState(freshData);
+                    setLoaded(true);
                 } catch (e) {
                     console.warn("Fetch failed, keeping old data", e);
                     setErrorMessage("Actualizarea tabelului a esuat.");

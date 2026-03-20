@@ -35,7 +35,7 @@ ion-toolbar.spacer {
 .home-page ion-card-title {
     font-size: 20px;
     font-weight: 600;
-    color: #fffefe;
+    color: #ffffff;
 }
 
 .home-page ion-item::part(native) {
@@ -45,16 +45,18 @@ ion-toolbar.spacer {
 
 .home-page ion-item {
     --background: transparent;
-    --min-height: 28px;
+    --min-height: -11px;
     --inner-border-width: 0px;
-    --border-width: 0px;
+    --border-width: 0px;/*
+    margin-top: -8px;
+    margin-bottom: -8px;*/
 }
 
 .home-page ion-list {
-    --background: #322d31;
     background: #322d31;
     border-radius: 12px;
     overflow: hidden;
+    /*line-height: 0.5em;*/
 }
 
 

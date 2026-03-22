@@ -1,51 +1,48 @@
-import React, {useEffect, useState} from "react";
-import { ScanSettingsContext} from "./SettingsContext";
-import {loadSettings, saveSettings, Settings} from "../storage/storage";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {ScanSettingsContext} from "./SettingsContext";
+import {DEFAULT_SETTINGS, loadSettings, saveSettings, Settings} from "../storage/storage";
 
 export const ScanSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isScanTabActive, setIsScanTabActive] = useState(false);
-    const [settings, setSettings] = useState<Settings>({
-        low_power: false,
-        sunet: true,
-        vibratie: true
-    });
+    const [loaded, setLoaded] = useState(false);
+    const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
     useEffect(() => {
         const init = async () => {
             const s = await loadSettings();
             setSettings(s);
+            setLoaded(true);
         };
 
         void init();
     }, []);
 
     useEffect(() => {
+        if (!loaded) return;
         void saveSettings(settings);
-    }, [settings]);
+    }, [settings, loaded]);
 
-    function updateSetting<K extends keyof Settings>(key: K, value: Settings[K]) {
-        setSettings(prev => ({
-            ...prev,
-            [key]: value
-        }));
-    }
+    const updateSetting = useCallback(
+        <K extends keyof Settings>(key: K, value: Settings[K]) => {
+            setSettings(prev => ({
+                ...prev,
+                [key]: value
+            }));
+    }, []);
 
-    const setLowPowerMode = (value: boolean) => {
-        updateSetting("low_power", value);
-    };
-
-    const setSunetScanare = (value: boolean) => {
-        updateSetting("sunet", value);
-    };
-
-    const setVibratieScanare = (value: boolean) => {
-        updateSetting("vibratie", value);
-    };
-
+    const value = useMemo(() => ({
+        loaded,
+        lowPowerMode: settings.lowPower,
+        sound: settings.sound,
+        vibration: settings.vibration,
+        updateSetting,
+        isScanTabActive,
+        setIsScanTabActive
+    }), [loaded, settings, updateSetting, isScanTabActive]);
 
     return (
         <ScanSettingsContext.Provider
-            value={{ lowPowerMode: settings.low_power, setLowPowerMode, sunetScanare: settings.sunet, setSunetScanare, vibratieScanare: settings.vibratie, setVibratieScanare, isScanTabActive, setIsScanTabActive }}
+            value={value}
         >
             {children}
         </ScanSettingsContext.Provider>

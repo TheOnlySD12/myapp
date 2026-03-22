@@ -2,7 +2,7 @@ import { Route } from 'react-router-dom';
 import {
     IonApp,
     IonIcon,
-    IonLabel,
+    IonLabel, IonLoading,
     IonRouterOutlet,
     IonTabBar,
     IonTabButton,
@@ -50,6 +50,8 @@ import {Redirect} from "react-router";
 import {createTestData} from "./storage/storage";
 import {ScanSettingsProvider} from "./contexts/SettingsProvider";
 import {TabelProvider} from "./contexts/TabelProvider";
+import {useTabel} from "./contexts/TabelContext";
+import {useScanSettings} from "./contexts/SettingsContext";
 
 setupIonicReact();
 
@@ -63,6 +65,7 @@ const App: React.FC = () => {
         <IonApp>
             <ScanSettingsProvider>
                 <TabelProvider>
+                <Loader/>
                     <IonReactRouter>
                         <IonTabs>
                             <IonRouterOutlet>
@@ -96,5 +99,14 @@ const App: React.FC = () => {
     );
 }
 
+
+const Loader: React.FC = () => {
+    const tabel = useTabel();
+    const settings = useScanSettings();
+
+    const loaded = tabel.loaded && settings.loaded;
+
+    return <IonLoading isOpen={!loaded} message="Loading..." />;
+};
 
 export default App;

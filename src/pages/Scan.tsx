@@ -54,7 +54,7 @@ const Scan: React.FC = () => {
     const { tabel, setTabel, loaded, scannedToday, setScannedToday , clearScannedForToday} = useTabel();
     const tabelRef = useRef(tabel);
 
-    const { setIsScanTabActive, lowPowerMode, isScanTabActive , vibratieScanare, sunetScanare} = useScanSettings();
+    const { setIsScanTabActive, lowPowerMode, isScanTabActive , vibration, sound} = useScanSettings();
     const lowPowerModeRef = useRef(lowPowerMode);
     const isScanTabActiveRef = useRef(isScanTabActive);
     const [showHistory, setShowHistory] = useState(false);
@@ -95,8 +95,8 @@ const Scan: React.FC = () => {
         const elevFound = tabelRef.current.find(elev => elev.name === text);
 
         if(elevFound){
-            if(vibratieScanare) navigator.vibrate(200);
-            if(sunetScanare) await audioRef.current?.play()
+            if(vibration) navigator.vibrate(200);
+            if(sound) await audioRef.current?.play()
             if(!alreadyScanned){
                 const updatedList = [...lastScanListRef.current, text]
                 lastScanListRef.current = updatedList;
@@ -118,7 +118,7 @@ const Scan: React.FC = () => {
                 azi: false
             });
         }
-    },[setScannedToday, sunetScanare, vibratieScanare]);
+    },[setScannedToday, sound, vibration]);
 
     useEffect(() => {
         if (!loaded || !isScanTabActive || controlsRef.current) return;

@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 
 
 const Home: React.FC = () => {
-    const {lowPowerMode , setLowPowerMode, sunetScanare, setSunetScanare, vibratieScanare, setVibratieScanare} = useScanSettings();
+    const {lowPowerMode, sound, vibration, updateSetting} = useScanSettings();
     const { tabel , setTabel , scannedToday, clearScannedForToday, checkDateAndSync} = useTabel();
     const today = [0, 6].includes(new Date().getDay()) ? 1 : new Date().getDay();
     const numarDesertElevi = tabel.filter(elev => elev.flags[0] && elev.flags[today]).length;
@@ -218,21 +218,21 @@ const Home: React.FC = () => {
                             <IonItem>
                                 <IonToggle
                                     checked={lowPowerMode}
-                                    onIonChange={(e) => setLowPowerMode(e.detail.checked)}
+                                    onIonChange={(e) => updateSetting("lowPower", e.detail.checked)}
                                 >Mod Consum Redus
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
                                 <IonToggle
-                                    checked={sunetScanare}
-                                    onIonChange={(e) => setSunetScanare(e.detail.checked)}
+                                    checked={sound}
+                                    onIonChange={(e) => updateSetting("sound", e.detail.checked)}
                                 >Sunet Scanare
                                 </IonToggle>
                             </IonItem>
                             <IonItem>
                                 <IonToggle
-                                    checked={vibratieScanare}
-                                    onIonChange={(e) => setVibratieScanare(e.detail.checked)}
+                                    checked={vibration}
+                                    onIonChange={(e) => updateSetting("vibration", e.detail.checked)}
                                 >Vibratie Scanare
                                 </IonToggle>
                             </IonItem>

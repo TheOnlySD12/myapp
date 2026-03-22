@@ -7,11 +7,26 @@ export type Elev = {
 };
 
 export type Settings = {
-    low_power: boolean;
-    sunet: boolean;
-    vibratie: boolean;
+    lowPower: boolean;
+    sound: boolean;
+    vibration: boolean;
 };
 
+const KEYS = {
+    TABEL: 'tabel',
+    BASELINE: 'tabel_baseline',
+    SCANNED: 'scannedToday',
+    DATE: 'scanDate',
+    SETTINGS: 'settings'
+} as const;
+
+type StorageKey = typeof KEYS[keyof typeof KEYS];
+
+export const DEFAULT_SETTINGS: Settings = {
+    lowPower: false,
+    sound: false,
+    vibration: false
+};
 
 let store: Storage | null = null;
 
@@ -23,24 +38,28 @@ async function getStore(): Promise<Storage> {
     return store;
 }
 
-export async function saveTabel(x: Elev[]): Promise<void> {
+async function set<T>(key: StorageKey, value: T): Promise<void> {
     const s = await getStore();
-    await s.set('tabel', x);
+    await s.set(key, value);
 }
 
-export async function loadTabel(): Promise<Elev[] | null> {
+async function get<T>(key: StorageKey): Promise<T | null> {
     const s = await getStore();
-    return await s.get('tabel');
+    return s.get(key);
 }
 
-export async function saveBaseline(x: Elev[]): Promise<void> {
-    const s = await getStore();
-    await s.set('tabel_baseline', x);
-}
-
-export async function loadBaseline(): Promise<Elev[] | null> {
-    const s = await getStore();
-    return await s.get('tabel_baseline');
+export const saveTabel = (x: Elev[]) => set(KEYS.TABEL, x);
+export const loadTabel = () => get<Elev[]>(KEYS.TABEL);
+export const saveBaseline = (x: Elev[]) => set(KEYS.BASELINE, x);
+export const loadBaseline = () => get<Elev[]>(KEYS.BASELINE);
+export const saveScannedToday = (x: string[]) => set(KEYS.SCANNED, x);
+export const loadScannedToday = () => get<string[]>(KEYS.SCANNED);
+export const saveScanDate = (x: string) => set(KEYS.DATE, x);
+export const loadScanDate = () => get<string>(KEYS.DATE);
+export const saveSettings = (x: Settings) => set(KEYS.SETTINGS, x);
+export async function loadSettings(): Promise<Settings> {
+    const settings = await get<Settings>(KEYS.SETTINGS);
+    return settings ?? DEFAULT_SETTINGS;
 }
 
 // test data
@@ -92,38 +111,4 @@ export async function createTestData(): Promise<void> {
 
     await saveBaseline(testData);
     await saveTabel(testData);
-}
-
-export async function loadScannedToday(): Promise<string[] | null> {
-    const s = await getStore();
-    return await s.get('scannedToday');
-}
-
-export async function saveScannedToday(list: string[]): Promise<void> {
-    const s = await getStore();
-    await s.set('scannedToday', list);
-}
-
-export async function loadScanDate(): Promise<string | null> {
-    const s = await getStore();
-    return await s.get('scanDate');
-}
-
-export async function saveScanDate(date: string): Promise<void> {
-    const s = await getStore();
-    await s.set('scanDate', date);
-}
-
-export async function loadSettings(): Promise<Settings> {
-    const s = await getStore();
-    return (await s.get('settings')) ?? {
-        low_power: false,
-        sunet: true,
-        vibratie: true
-    };
-}
-
-export async function saveSettings(settings: Settings): Promise<void> {
-    const s = await getStore();
-    await s.set('settings', settings);
 }

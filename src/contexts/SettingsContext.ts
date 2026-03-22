@@ -1,17 +1,16 @@
 import { createContext, useContext } from "react";
+import {Settings} from "../storage/storage";
 
 export interface ScanSettings {
     lowPowerMode: boolean;
-    setLowPowerMode: (lowPower: boolean) => void;
-
-    sunetScanare: boolean;
-    setSunetScanare: (sunet: boolean) => void;
-
-    vibratieScanare: boolean;
-    setVibratieScanare: (vibratie: boolean) => void;
+    sound: boolean;
+    vibration: boolean;
+    updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
 
     isScanTabActive: boolean;
     setIsScanTabActive: (active: boolean) => void;
+
+    loaded: boolean;
 }
 
 export const ScanSettingsContext = createContext<ScanSettings | undefined>(undefined);

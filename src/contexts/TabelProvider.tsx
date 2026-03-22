@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, {useEffect, useState, useCallback, useMemo} from "react";
 import {
     Elev,
     loadScanDate,
@@ -9,7 +9,7 @@ import {
     saveTabel
 } from "../storage/storage";
 import { TabelContext } from "./TabelContext";
-import {IonAlert, IonLoading} from "@ionic/react";
+import {IonAlert} from "@ionic/react";
 
 const coloane = {
     name: "Vă rugăm să alegeți din listă numele elevului:",
@@ -48,7 +48,7 @@ function getTodayStrRO(): string {
 }
 
 async function fetchFromSheet(): Promise<Elev[]> {
-    const res = await fetch("https://sheetdb.io/api/v1/XXXX");
+    const res = await fetch("");
 
     if (!res.ok) throw new Error("Failed to fetch");
 
@@ -74,77 +74,6 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [scannedToday, setScannedTodayState] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const checkDateAndSync = useCallback(
-        async (options?: { forceFetch?: boolean }) => {
-            const { forceFetch = false } = options || {};
-            const todayStr = getTodayStrRO();
-
-            if (forceFetch) {
-                try {
-                    const freshData = await fetchFromSheet();
-                    await saveTabel(freshData);
-                    setTabelState(freshData);
-                } catch (e) {
-                    console.warn("Force fetch failed", e);
-                    setErrorMessage("Actualizarea tabelului a esuat.");
-                }
-                return;
-            }
-
-            const [savedDate, savedTabel] = await Promise.all([
-                loadScanDate(),
-                loadTabel()
-            ]);
-
-            const currentWeek = getWeekStart(todayStr);
-            const savedWeek = savedDate ? getWeekStart(savedDate) : null;
-
-            const hasNoData = !savedDate || !savedTabel || savedTabel.length === 0;
-            const isNewWeek = savedWeek !== null && currentWeek !== savedWeek;
-            const isNewDay = savedDate !== todayStr;
-
-            if (hasNoData || isNewWeek) {
-                try {
-                    const freshData = await fetchFromSheet();
-                    await saveTabel(freshData);
-                    setTabelState(freshData);
-                    setLoaded(true);
-                } catch (e) {
-                    console.warn("Fetch failed, keeping old data", e);
-                    setErrorMessage("Actualizarea tabelului a esuat.");
-                }
-
-                await saveScannedToday([]);
-                setScannedTodayState([]);
-
-                await saveScanDate(todayStr);
-                return;
-            }
-
-            if (isNewDay) {
-                await saveScannedToday([]);
-                setScannedTodayState([]);
-
-                await saveScanDate(todayStr);
-                return;
-            }
-        }, []);
-
-    useEffect(() => {
-        const init = async () => {
-            const data = await loadTabel();
-            if (data) setTabelState(data);
-
-            const savedList = await loadScannedToday();
-            setScannedTodayState(savedList || []);
-
-            await checkDateAndSync();
-            setLoaded(true);
-        };
-
-        void init();
-    }, [checkDateAndSync]);
-
     const setTabel = useCallback((data: Elev[]) => {
         setTabelState(data);
         void saveTabel(data);
@@ -155,11 +84,62 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         void saveScannedToday(list);
     }, []);
 
-    const clearScannedForToday = useCallback(() => {
+    const clearScannedForToday = useCallback(() => { //curata pentru azi nu de azi
         setScannedTodayState([]);
         void saveScannedToday([]);
         void saveScanDate(getTodayStrRO());
     }, []);
+
+    const checkDateAndSync = useCallback(
+        async (options?: { forceFetch?: boolean }) => {
+            const { forceFetch = false } = options || {};
+            const todayStr = getTodayStrRO();
+
+            if (forceFetch) {
+                try {
+                    const freshData = await fetchFromSheet();
+                    setTabel(freshData)
+                } catch (e) {
+                    console.warn("Fetch failed, keeping old data", e);
+                    setErrorMessage("Actualizarea tabelului a esuat.");
+                }
+                return;
+            }
+
+            const [savedDate, savedTabel] = await Promise.all([loadScanDate(), loadTabel()]);
+
+            const hasNoData = !savedDate || !savedTabel || savedTabel.length === 0;
+
+            if (hasNoData || getWeekStart(todayStr) !== getWeekStart(savedDate)) {
+                try {
+                    const freshData = await fetchFromSheet();
+                    setTabel(freshData)
+                } catch (e) {
+                    console.warn("Fetch failed, keeping old data", e);
+                    setErrorMessage("Actualizarea tabelului a esuat.");
+                }
+
+                clearScannedForToday();
+                return;
+            }
+
+            if (savedDate !== todayStr) {
+                clearScannedForToday();
+                return;
+            }
+        }, [clearScannedForToday, setTabel]);
+
+    useEffect(() => {
+        const init = async () => {
+            const [data, scanned] = await Promise.all([loadTabel(), loadScannedToday()]);
+            setTabelState(data || []);
+            setScannedTodayState(scanned || []);
+            await checkDateAndSync();
+            setLoaded(true);
+        };
+
+        void init();
+    }, [checkDateAndSync]);
 
     useEffect(() => {
         const handleVisibility = () => {
@@ -175,20 +155,21 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
     }, [checkDateAndSync]);
 
+    const value = useMemo(() => ({
+        tabel,
+        setTabel,
+        loaded,
+        scannedToday,
+        setScannedToday,
+        clearScannedForToday,
+        checkDateAndSync,
+    }), [tabel, setTabel, loaded, scannedToday, setScannedToday, clearScannedForToday, checkDateAndSync]);
+
     return (
         <>
-            <TabelContext.Provider value={{
-                tabel,
-                setTabel,
-                loaded,
-                scannedToday,
-                setScannedToday,
-                clearScannedForToday,
-                checkDateAndSync,
-            }}>
+            <TabelContext.Provider value={value}>
                 {children}
             </TabelContext.Provider>
-            <IonLoading isOpen={!loaded} message="Loading data..." />
             <IonAlert
                 isOpen={!!errorMessage}
                 onDidDismiss={() => setErrorMessage(null)}

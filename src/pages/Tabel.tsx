@@ -11,7 +11,7 @@ import {
     IonTitle,
     IonToolbar
 } from "@ionic/react";
-import {Elev, loadBaseline} from "../storage/storage";
+import {Elev} from "../storage/storage";
 import {colorWand, filterCircle, pencil} from "ionicons/icons";
 import Fuse from "fuse.js";
 import {useTabel} from "../contexts/TabelContext";
@@ -35,11 +35,11 @@ type RowProps = {
     edit: boolean;
     highlighted: boolean;
     changedFlags?: number[];
-    onToggle: (elev: Elev, colIndex: number) => void;
+    onToggle: (rowIndex: number, colIndex: number) => void;
 };
 
 const TabelRow = React.memo(
-    ({ elev, edit, highlighted, changedFlags, onToggle }: RowProps) => {
+    ({ elev, edit, highlighted, changedFlags, onToggle, rowIndex}: RowProps) => {
 
         const rowRef = useRef<HTMLIonRowElement | null>(null);
 
@@ -73,7 +73,7 @@ const TabelRow = React.memo(
                         <IonBadge
                             onClick={() => {
                                 if (!edit) return;
-                                onToggle(elev, colIndex);
+                                onToggle(rowIndex, colIndex);
                             }}
                             color={
                                 changedFlags?.includes(colIndex)
@@ -103,13 +103,9 @@ const Tabel: React.FC = () => {
     const [query, setQuery] = useState("");
     const contentRef = useRef<HTMLIonContentElement | null>(null);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-    const [baseline, setBaseline] = useState<Elev[] | null>(null);
+    const [changesMap, setChangesMap] = useState<Map<number, Set<number>>>(new Map());
 
     const source = edit && draft ? draft : tabel;
-
-    useEffect(() => {
-        loadBaseline().then(setBaseline);
-    }, []);
 
     const todayIndex = useMemo(() => {
         return new Date().getDay();
@@ -123,29 +119,6 @@ const Tabel: React.FC = () => {
             ignoreLocation: true,
         });
     }, [source]);
-
-    const changesMap = useMemo(() => {
-        if (!baseline || baseline.length !== source.length)
-            return new Map();
-
-        const map = new Map<number, number[]>();
-
-        for (let i = 0; i < baseline.length; i++) {
-            const changedCols = baseline[i].flags.reduce<number[]>(
-                (acc, flag, j) => {
-                    if (flag !== source[i].flags[j]) acc.push(j);
-                    return acc;
-                },
-                []
-            );
-
-            if (changedCols.length) {
-                map.set(i, changedCols);
-            }
-        }
-
-        return map;
-    }, [baseline, source]);
 
     const unscannedMap = useMemo(() => {
         if (!scannedToday) return new Map<number, number[]>();
@@ -191,6 +164,14 @@ const Tabel: React.FC = () => {
         return viewMode;
     }, [query, viewMode, mode, fuzzy, fuse, viewSet]);
 
+    const indexMap = useMemo(() => {
+        const map = new Map();
+        visibleData.forEach((el, i) => {
+            map.set(el.name, i);
+        });
+        return map;
+    }, [visibleData]);
+
     const firstMatchIndex = useMemo(() => {
         if (!query || mode !== "highlight") return null;
 
@@ -199,12 +180,15 @@ const Tabel: React.FC = () => {
         if (fuzzy && fuse) {
             const results = fuse.search(lowerQuery);
             if (results.length === 0) return null;
-            return visibleData.findIndex(el => el === results[0].item);
+            const match = results.find(r => viewSet.has(r.item));
+            if (!match) return null;
+
+            return indexMap.get(match.item.name) ?? null;
         }
 
         // Normal search
         return visibleData.findIndex(el => el.name.toLowerCase().includes(lowerQuery));
-    }, [query, mode, fuzzy, fuse, visibleData]);
+    }, [query, mode, fuzzy, fuse, visibleData, indexMap, viewSet]);
 
     useEffect(() => {
         setHighlightedIndex(firstMatchIndex);
@@ -215,24 +199,38 @@ const Tabel: React.FC = () => {
         }
     }, [firstMatchIndex]);
 
-    const handleToggle = useCallback((elev: Elev, colIndex: number) => {
+    const handleToggle = useCallback((index: number, colIndex: number) => {
         setDraft(prev => {
             if (!prev) return prev;
 
-            const index = prev.indexOf(elev);
-            if (index === -1) return prev;
-
             const copy = [...prev];
-
-            const updatedRow = {
+            const row = {
                 ...copy[index],
-                flags: [...copy[index].flags] as Elev["flags"]
+                flags: [...copy[index].flags] as [boolean, boolean, boolean, boolean, boolean, boolean]
             };
-
-            updatedRow.flags[colIndex] = !updatedRow.flags[colIndex];
-            copy[index] = updatedRow;
+            row.flags[colIndex] = !row.flags[colIndex];
+            copy[index] = row;
 
             return copy;
+        });
+
+        setChangesMap(prev => {
+            const map = new Map(prev);
+            const set = new Set(map.get(index) ?? []);
+
+            if (set.has(colIndex)) {
+                set.delete(colIndex);
+            } else {
+                set.add(colIndex);
+            }
+
+            if (set.size === 0) {
+                map.delete(index);
+            } else {
+                map.set(index, set);
+            }
+
+            return map;
         });
     }, []);
 
@@ -282,27 +280,28 @@ const Tabel: React.FC = () => {
                 </IonToolbar>
                 <IonToolbar>
                     <IonSearchbar animated={true} placeholder={"Elev"} onIonInput={(e) => {
-                        const value = (e.target as HTMLIonSearchbarElement).value ?? "";
-                        setQuery(value.toLowerCase());
+                        setQuery((e.detail.value ?? "").toLowerCase());
                     }}></IonSearchbar>
                 </IonToolbar>
                 {edit && <IonToolbar>
                     <IonButtons slot="start">
                         <IonButton onClick={() => {
-                            if (!draft) return;
-
-                            const newTabel = draft!.map((row, i) =>
-                                row.flags === tabel[i].flags ? tabel[i] : row
-                            );
-                            setTabel(newTabel);
-                            setDraft(null);
-                            setEdit(false);
+                            if (draft) {
+                                const newTabel = draft.map((row, i) =>
+                                    changesMap.has(i) ? row : tabel[i]
+                                );
+                                setTabel(newTabel);
+                                setDraft(null);
+                                setChangesMap(new Map());
+                                setEdit(false);
+                            }
                         }}>Save</IonButton>
                     </IonButtons>
                     <IonButtons slot="end">
                         <IonButton
                             onClick={() => {
                                 setDraft(null);
+                                setChangesMap(new Map());
                                 setEdit(false);
                             }}
                         >Discard
@@ -329,8 +328,8 @@ const Tabel: React.FC = () => {
                             elev={elev}
                             rowIndex={rowIndex}
                             edit={edit}
-                            highlighted={highlightedIndex !== null && elev === visibleData[highlightedIndex]}
-                            changedFlags={changesMap.get(source.indexOf(elev))}
+                            highlighted={highlightedIndex !== null && elev.name === visibleData[highlightedIndex].name}
+                            changedFlags={changesMap.get(rowIndex) && [...changesMap.get(rowIndex)!]}
                             onToggle={handleToggle}
                         />
                     ))}

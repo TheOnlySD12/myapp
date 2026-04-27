@@ -94,22 +94,20 @@ const TabelRow = React.memo(
 
 
 const Tabel: React.FC = () => {
-    const { tabel, setTabel, scannedToday} = useTabel();
+    const { tabel, setTabel, scannedToday } = useTabel();
+
     const [draft, setDraft] = useState<Elev[] | null>(null);
     const [mode, setMode] = useState<"highlight" | "filter">("highlight");
-    const [view, setView] = useState<"all" | "changes" | "unscanned">("all")
+    const [view, setView] = useState<"all" | "changes" | "unscanned">("all");
     const [fuzzy, setFuzzy] = useState(false);
     const [edit, setEdit] = useState(false);
     const [query, setQuery] = useState("");
-    const contentRef = useRef<HTMLIonContentElement | null>(null);
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [changesMap, setChangesMap] = useState<Map<number, Set<number>>>(new Map());
 
     const source = edit && draft ? draft : tabel;
 
-    const todayIndex = useMemo(() => {
-        return new Date().getDay();
-    }, []);
+    const todayIndex = useMemo(() => new Date().getDay(), []);
 
     const fuse = useMemo(() => {
         if (!source.length) return null;
@@ -120,22 +118,30 @@ const Tabel: React.FC = () => {
         });
     }, [source]);
 
+    // 🔥 Map name → original index in source
+    const originalIndexMap = useMemo(() => {
+        const map = new Map<string, number>();
+        source.forEach((el, i) => map.set(el.name, i));
+        return map;
+    }, [source]);
+
+    // Unscanned rows
     const unscannedMap = useMemo(() => {
         if (!scannedToday) return new Map<number, number[]>();
 
         const scannedSet = new Set(scannedToday);
         const map = new Map<number, number[]>();
 
-        for (let i = 0; i < source.length; i++) {
-            const row = source[i];
+        source.forEach((row, i) => {
             if (row.flags[todayIndex] && !scannedSet.has(row.name)) {
                 map.set(i, [todayIndex]);
             }
-        }
+        });
 
         return map;
     }, [scannedToday, source, todayIndex]);
 
+    // Apply view mode
     const { viewMode, viewSet } = useMemo(() => {
         const filtered = (() => {
             if (view === "changes") return source.filter((_, i) => changesMap.has(i));
@@ -143,11 +149,10 @@ const Tabel: React.FC = () => {
             return source;
         })();
 
-        const set = new Set(filtered);
-
-        return { viewMode: filtered, viewSet: set };
+        return { viewMode: filtered, viewSet: new Set(filtered) };
     }, [source, view, changesMap, unscannedMap]);
 
+    // Apply search
     const visibleData = useMemo(() => {
         if (!query) return viewMode;
 
@@ -155,80 +160,85 @@ const Tabel: React.FC = () => {
             if (fuzzy && fuse) {
                 return fuse.search(query).map(r => r.item).filter(el => viewSet.has(el));
             }
-
-            return viewMode.filter(el =>
-                el.name.toLowerCase().includes(query)
-            );
+            return viewMode.filter(el => el.name.toLowerCase().includes(query));
         }
 
         return viewMode;
     }, [query, viewMode, mode, fuzzy, fuse, viewSet]);
 
-    const indexMap = useMemo(() => {
-        const map = new Map();
-        visibleData.forEach((el, i) => {
-            map.set(el.name, i);
-        });
-        return map;
-    }, [visibleData]);
-
+    // Find first match for highlight mode
     const firstMatchIndex = useMemo(() => {
         if (!query || mode !== "highlight") return null;
 
-        const lowerQuery = query.toLowerCase();
+        const lower = query.toLowerCase();
 
-        if (fuzzy && fuse) {
-            const results = fuse.search(lowerQuery);
-            if (results.length === 0) return null;
-            const match = results.find(r => viewSet.has(r.item));
-            if (!match) return null;
+        // Normal search (fuse OFF)
+        if (!fuzzy) {
+            const matches = visibleData
+                .map(el => ({
+                    el,
+                    pos: el.name.toLowerCase().indexOf(lower)
+                }))
+                .filter(x => x.pos !== -1)
+                .sort((a, b) => a.pos - b.pos || a.el.name.length - b.el.name.length);
+            // earlier match wins; if equal, shorter name wins
 
-            return indexMap.get(match.item.name) ?? null;
+            if (matches.length === 0) return null;
+
+            return originalIndexMap.get(matches[0].el.name) ?? null;
         }
 
-        // Normal search
-        return visibleData.findIndex(el => el.name.toLowerCase().includes(lowerQuery));
-    }, [query, mode, fuzzy, fuse, visibleData, indexMap, viewSet]);
+        // Fuzzy search (fuse ON)
+        if (fuse) {
+            const results = fuse.search(lower);
 
+            const match = results.find(r =>
+                visibleData.some(el => el.name === r.item.name)
+            );
+
+            return match ? originalIndexMap.get(match.item.name) ?? null : null;
+        }
+
+        return null;
+    }, [query, mode, fuzzy, fuse, visibleData, originalIndexMap]);
+
+    // Highlight effect
     useEffect(() => {
         setHighlightedIndex(firstMatchIndex);
-
         if (firstMatchIndex !== null) {
             const timeout = setTimeout(() => setHighlightedIndex(null), 700);
             return () => clearTimeout(timeout);
         }
     }, [firstMatchIndex]);
 
-    const handleToggle = useCallback((index: number, colIndex: number) => {
+    // Toggle a flag
+    const handleToggle = useCallback((originalIndex: number, colIndex: number) => {
         setDraft(prev => {
             if (!prev) return prev;
 
             const copy = [...prev];
+
+            // Clone row and flags while preserving tuple type
             const row = {
-                ...copy[index],
-                flags: [...copy[index].flags] as [boolean, boolean, boolean, boolean, boolean, boolean]
+                ...copy[originalIndex],
+                flags: [...copy[originalIndex].flags] as Elev["flags"]
             };
+
             row.flags[colIndex] = !row.flags[colIndex];
-            copy[index] = row;
+            copy[originalIndex] = row;
 
             return copy;
         });
 
         setChangesMap(prev => {
             const map = new Map(prev);
-            const set = new Set(map.get(index) ?? []);
+            const set = new Set(map.get(originalIndex) ?? []);
 
-            if (set.has(colIndex)) {
-                set.delete(colIndex);
-            } else {
-                set.add(colIndex);
-            }
+            if (set.has(colIndex)) set.delete(colIndex);
+            else set.add(colIndex);
 
-            if (set.size === 0) {
-                map.delete(index);
-            } else {
-                map.set(index, set);
-            }
+            if (set.size === 0) map.delete(originalIndex);
+            else map.set(originalIndex, set);
 
             return map;
         });
@@ -240,99 +250,125 @@ const Tabel: React.FC = () => {
                 <IonToolbar className="spacer">
                     <IonTitle>ElfScanner</IonTitle>
                 </IonToolbar>
+
                 <IonToolbar>
                     <IonTitle className="main-title">Tabel</IonTitle>
+
                     <IonButtons slot="start">
-                        <IonButton color={mode === "highlight" ? "primary" : "medium"} onClick={() => {
-                            setMode(mode === "highlight" ? "filter" : "highlight");
-                        }}>
-                            <IonIcon icon={colorWand}/>
+                        <IonButton
+                            color={mode === "highlight" ? "primary" : "medium"}
+                            onClick={() => setMode(m => (m === "highlight" ? "filter" : "highlight"))}
+                        >
+                            <IonIcon icon={colorWand} />
                         </IonButton>
                     </IonButtons>
+
                     <IonButtons slot="start">
-                        <IonBadge color={view === "all" ? "medium" : view === "changes" ? "warning" : "tertiary"} onClick={() => {
-                            setView(view === "all" ? "changes" : view === "changes" ? "unscanned" : "all");
-                        }}>
+                        <IonBadge
+                            color={view === "all" ? "medium" : view === "changes" ? "warning" : "tertiary"}
+                            onClick={() =>
+                                setView(v => (v === "all" ? "changes" : v === "changes" ? "unscanned" : "all"))
+                            }
+                        >
                             {view === "all" ? "Toti" : view === "changes" ? "Schimbari" : "Nescanati"}
                         </IonBadge>
                     </IonButtons>
-                    <IonButtons slot="end">
-                        <IonButton onClick={() => {
-                            setEdit(e => {
-                                if (!e) {
-                                    setDraft(prev => prev ?? [...tabel]);
-                                } else {
-                                    setDraft(null);
-                                }
-                                return !e;
-                            });
-                        }}>
-                            <IonIcon icon={pencil} color={edit ? "primary" : "medium"}/>
-                        </IonButton>
-                    </IonButtons>
-                    <IonButtons slot="end">
-                        <IonButton onClick={() => {
-                            setFuzzy(f => !f);
-                        }}>
-                            <IonIcon icon={filterCircle} color={fuzzy ? "primary" : "medium"}/>
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-                <IonToolbar>
-                    <IonSearchbar animated={true} placeholder={"Elev"} onIonInput={(e) => {
-                        setQuery((e.detail.value ?? "").toLowerCase());
-                    }}></IonSearchbar>
-                </IonToolbar>
-                {edit && <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonButton onClick={() => {
-                            if (draft) {
-                                const newTabel = draft.map((row, i) =>
-                                    changesMap.has(i) ? row : tabel[i]
-                                );
-                                setTabel(newTabel);
-                                setDraft(null);
-                                setChangesMap(new Map());
-                                setEdit(false);
-                            }
-                        }}>Save</IonButton>
-                    </IonButtons>
+
                     <IonButtons slot="end">
                         <IonButton
-                            onClick={() => {
-                                setDraft(null);
-                                setChangesMap(new Map());
-                                setEdit(false);
-                            }}
-                        >Discard
+                            onClick={() =>
+                                setEdit(e => {
+                                    if (!e) setDraft(prev => prev ?? [...tabel]);
+                                    else setDraft(null);
+                                    return !e;
+                                })
+                            }
+                        >
+                            <IonIcon icon={pencil} color={edit ? "primary" : "medium"} />
+                        </IonButton>
+                    </IonButtons>
+
+                    <IonButtons slot="end">
+                        <IonButton onClick={() => setFuzzy(f => !f)}>
+                            <IonIcon icon={filterCircle} color={fuzzy ? "primary" : "medium"} />
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
-                }
+
+                <IonToolbar>
+                    <IonSearchbar
+                        animated
+                        placeholder="Elev"
+                        onIonInput={e => setQuery((e.detail.value ?? "").toLowerCase())}
+                    />
+                </IonToolbar>
+
+                {edit && (
+                    <IonToolbar>
+                        <IonButtons slot="start">
+                            <IonButton
+                                onClick={() => {
+                                    if (draft) {
+                                        const newTabel = draft.map((row, i) =>
+                                            changesMap.has(i) ? row : tabel[i]
+                                        );
+                                        setTabel(newTabel);
+                                        setDraft(null);
+                                        setChangesMap(new Map());
+                                        setEdit(false);
+                                    }
+                                }}
+                            >
+                                Save
+                            </IonButton>
+                        </IonButtons>
+
+                        <IonButtons slot="end">
+                            <IonButton
+                                onClick={() => {
+                                    setDraft(null);
+                                    setChangesMap(new Map());
+                                    setEdit(false);
+                                }}
+                            >
+                                Discard
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                )}
             </IonHeader>
-            <IonContent ref={contentRef} forceOverscroll={true}>
+
+            <IonContent>
                 <IonGrid>
                     <IonRow style={{ fontWeight: "bold" }}>
-                        <IonCol size="3.2" style={col}>Nume</IonCol>
-                        <IonCol size="1.6" style={col}>Clasa</IonCol>
+                        <IonCol size="3.2">Nume</IonCol>
+                        <IonCol size="1.6">Clasa</IonCol>
                         {days.map((z, i) => (
-                            <IonCol size="1.2" key={i} style={col}>
+                            <IonCol size="1.2" key={i}>
                                 <div className="ion-hide-sm-down">{z.full}</div>
                                 <div className="ion-hide-md-up">{z.short}</div>
                             </IonCol>
                         ))}
                     </IonRow>
-                    {visibleData.map((elev, rowIndex) => (
-                        <TabelRow
-                            key={elev.name}
-                            elev={elev}
-                            rowIndex={rowIndex}
-                            edit={edit}
-                            highlighted={highlightedIndex !== null && elev.name === visibleData[highlightedIndex].name}
-                            changedFlags={changesMap.get(rowIndex) && [...changesMap.get(rowIndex)!]}
-                            onToggle={handleToggle}
-                        />
-                    ))}
+
+                    {visibleData.map(elev => {
+                        const originalIndex = originalIndexMap.get(elev.name)!;
+
+                        return (
+                            <TabelRow
+                                key={elev.name}
+                                elev={elev}
+                                rowIndex={originalIndex}
+                                edit={edit}
+                                highlighted={highlightedIndex === originalIndex}
+                                changedFlags={
+                                    changesMap.get(originalIndex) &&
+                                    [...changesMap.get(originalIndex)!]
+                                }
+                                onToggle={handleToggle}
+                            />
+                        );
+                    })}
                 </IonGrid>
             </IonContent>
         </IonPage>

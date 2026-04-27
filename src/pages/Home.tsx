@@ -1,5 +1,5 @@
 import {
-    IonActionSheet,
+    IonActionSheet, IonAlert,
     IonBadge,
     IonButton,
     IonCard,
@@ -35,6 +35,7 @@ const Home: React.FC = () => {
     const [now, setNow] = useState(new Date());
     const [showOptionsSheet, setShowOptionsSheet] = useState(false);
     const [showFormatSheet, setShowFormatSheet] = useState(false);
+    const [showChangeAlert, setShowChangeAlert] = useState(false);
     const cantinaActiva =
         now.getDay() >= 1 &&
         now.getDay() <= 5 &&
@@ -292,6 +293,13 @@ const Home: React.FC = () => {
                             },
                         },
                         {
+                            text: 'Schimba sursa',
+                            handler: () => {
+                                setShowOptionsSheet(false);
+                                setShowChangeAlert(true);
+                            },
+                        },
+                        {
                             text: 'Anulează',
                             role: 'cancel'
                         },
@@ -316,6 +324,33 @@ const Home: React.FC = () => {
                         }
                     ]}
                 />
+                <IonAlert
+                    isOpen={showChangeAlert}
+                    onDidDismiss={() => setShowChangeAlert(false)}
+                    header="Scrie URL-ul"
+                    buttons={[
+                        {
+                            text: 'Cancel',
+                            role: 'cancel',
+                            handler: () => {
+                                console.log('Alert canceled');
+                            },
+                        },
+                        {
+                            text: 'OK',
+                            role: 'confirm',
+                            handler: () => {
+                                console.log('Alert confirmed');
+                            },
+                        },
+                    ]}
+                    inputs={[
+                        {
+                            type: 'textarea',
+                            placeholder: 'https://docs.google.com/spreadsheets/',
+                        },
+                    ]}
+                ></IonAlert>
             </IonContent>
         </IonPage>
     );

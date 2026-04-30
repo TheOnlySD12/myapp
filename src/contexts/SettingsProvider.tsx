@@ -35,6 +35,7 @@ export const ScanSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         lowPowerMode: settings.lowPower,
         sound: settings.sound,
         vibration: settings.vibration,
+        source: settings.source,
         updateSetting,
         isScanTabActive,
         setIsScanTabActive

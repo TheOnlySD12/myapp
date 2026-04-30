@@ -10,6 +10,7 @@ export type Settings = {
     lowPower: boolean;
     sound: boolean;
     vibration: boolean;
+    source: string;
 };
 
 const KEYS = {
@@ -25,7 +26,8 @@ type StorageKey = typeof KEYS[keyof typeof KEYS];
 export const DEFAULT_SETTINGS: Settings = {
     lowPower: false,
     sound: false,
-    vibration: false
+    vibration: false,
+    source: ""
 };
 
 let store: Storage | null = null;

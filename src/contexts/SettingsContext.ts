@@ -5,6 +5,7 @@ export interface ScanSettings {
     lowPowerMode: boolean;
     sound: boolean;
     vibration: boolean;
+    source: string;
     updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
 
     isScanTabActive: boolean;

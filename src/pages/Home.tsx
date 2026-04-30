@@ -332,15 +332,12 @@ const Home: React.FC = () => {
                         {
                             text: 'Cancel',
                             role: 'cancel',
-                            handler: () => {
-                                console.log('Alert canceled');
-                            },
                         },
                         {
                             text: 'OK',
                             role: 'confirm',
-                            handler: () => {
-                                console.log('Alert confirmed');
+                            handler: (data) => {
+                                updateSetting("source", data[0])
                             },
                         },
                     ]}

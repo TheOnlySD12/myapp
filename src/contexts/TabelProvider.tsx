@@ -10,6 +10,7 @@ import {
 } from "../storage/storage";
 import { TabelContext } from "./TabelContext";
 import {IonAlert} from "@ionic/react";
+import {useScanSettings} from "./SettingsContext";
 
 const coloane = {
     name: "Vă rugăm să alegeți din listă numele elevului:",
@@ -47,8 +48,16 @@ function getTodayStrRO(): string {
     return `${y}-${m}-${day}`;
 }
 
-async function fetchFromSheet(): Promise<Elev[]> {
-    const res = await fetch("");
+async function fetchFromSheet(source: string): Promise<Elev[]> {
+    const res = await fetch(source);
+
+    console.log("final URL:", res.url);
+    console.log("content-type:", res.headers.get("content-type"));
+
+    const text = await res.text();
+    console.log(text.slice(0, 200));
+
+    console.log(source);
 
     if (!res.ok) throw new Error("Failed to fetch");
 
@@ -73,6 +82,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [loaded, setLoaded] = useState(false);
     const [scannedToday, setScannedTodayState] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const {source} = useScanSettings();
 
     const setTabel = useCallback((data: Elev[]) => {
         setTabelState(data);
@@ -97,7 +107,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             if (forceFetch) {
                 try {
-                    const freshData = await fetchFromSheet();
+                    const freshData = await fetchFromSheet(source);
                     setTabel(freshData)
                 } catch (e) {
                     console.warn("Fetch failed, keeping old data", e);
@@ -112,7 +122,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             if (hasNoData || getWeekStart(todayStr) !== getWeekStart(savedDate)) {
                 try {
-                    const freshData = await fetchFromSheet();
+                    const freshData = await fetchFromSheet(source);
                     setTabel(freshData)
                 } catch (e) {
                     console.warn("Fetch failed, keeping old data", e);
@@ -127,7 +137,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 clearScannedForToday();
                 return;
             }
-        }, [clearScannedForToday, setTabel]);
+        }, [clearScannedForToday, setTabel, source]);
 
     useEffect(() => {
         const init = async () => {

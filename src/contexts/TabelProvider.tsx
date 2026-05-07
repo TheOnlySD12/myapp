@@ -1,9 +1,9 @@
 import React, {useEffect, useState, useCallback, useMemo} from "react";
 import {
-    Elev,
+    Elev, loadBaseline,
     loadScanDate,
     loadScannedToday,
-    loadTabel,
+    loadTabel, saveBaseline,
     saveScanDate,
     saveScannedToday,
     saveTabel
@@ -57,7 +57,7 @@ async function fetchFromSheet(source: string): Promise<Elev[]> {
     const text = await res.text();
     console.log(text.slice(0, 200));
 
-    console.log(source);
+    console.log(source);//TODO: fix source fetch
 
     if (!res.ok) throw new Error("Failed to fetch");
 
@@ -79,6 +79,7 @@ async function fetchFromSheet(source: string): Promise<Elev[]> {
 
 export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [tabel, setTabelState] = useState<Elev[]>([]);
+    const [baseline , setBaselineState] = useState<Elev[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [scannedToday, setScannedTodayState] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -87,6 +88,11 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const setTabel = useCallback((data: Elev[]) => {
         setTabelState(data);
         void saveTabel(data);
+    }, []);
+
+    const setBaseline = useCallback((data: Elev[]) => {
+        setBaselineState(data);
+        void saveBaseline(data);
     }, []);
 
     const setScannedToday = useCallback((list: string[]) => {
@@ -108,6 +114,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (forceFetch) {
                 try {
                     const freshData = await fetchFromSheet(source);
+                    setBaseline(freshData);
                     setTabel(freshData)
                 } catch (e) {
                     console.warn("Fetch failed, keeping old data", e);
@@ -123,6 +130,7 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (hasNoData || getWeekStart(todayStr) !== getWeekStart(savedDate)) {
                 try {
                     const freshData = await fetchFromSheet(source);
+                    setBaseline(freshData);
                     setTabel(freshData)
                 } catch (e) {
                     console.warn("Fetch failed, keeping old data", e);
@@ -137,12 +145,14 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 clearScannedForToday();
                 return;
             }
-        }, [clearScannedForToday, setTabel, source]);
+        }, [clearScannedForToday, setBaseline, setTabel, source]);
 
     useEffect(() => {
         const init = async () => {
-            const [data, scanned] = await Promise.all([loadTabel(), loadScannedToday()]);
-            setTabelState(data || []);
+            const [data, scanned, baseline] = await Promise.all([loadTabel(), loadScannedToday(), loadBaseline()]);
+            const safeData = data || [];
+            setTabelState(safeData);
+            setBaselineState(baseline || safeData);
             setScannedTodayState(scanned || []);
             await checkDateAndSync();
             setLoaded(true);
@@ -169,11 +179,13 @@ export const TabelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         tabel,
         setTabel,
         loaded,
+        baseline,
+        setBaseline,
         scannedToday,
         setScannedToday,
         clearScannedForToday,
         checkDateAndSync,
-    }), [tabel, setTabel, loaded, scannedToday, setScannedToday, clearScannedForToday, checkDateAndSync]);
+    }), [tabel, setTabel, loaded, baseline, setBaseline, scannedToday, setScannedToday, clearScannedForToday, checkDateAndSync]);
 
     return (
         <>

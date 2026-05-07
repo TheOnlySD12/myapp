@@ -36,10 +36,11 @@ type RowProps = {
     highlighted: boolean;
     changedFlags?: number[];
     onToggle: (rowIndex: number, colIndex: number) => void;
+    baselineMap: Map<string, Elev>;
 };
 
 const TabelRow = React.memo(
-    ({ elev, edit, highlighted, changedFlags, onToggle, rowIndex}: RowProps) => {
+    ({ elev, edit, highlighted, changedFlags, onToggle, rowIndex, baselineMap}: RowProps) => {
 
         const rowRef = useRef<HTMLIonRowElement | null>(null);
 
@@ -76,7 +77,7 @@ const TabelRow = React.memo(
                                 onToggle(rowIndex, colIndex);
                             }}
                             color={
-                                changedFlags?.includes(colIndex)
+                                changedFlags?.includes(colIndex) || baselineMap.get(elev.name)?.flags[colIndex] !== flag //TODO: diferenta intre schimbat acum si anterior
                                     ? "warning"
                                     : flag
                                         ? "success"
@@ -94,7 +95,7 @@ const TabelRow = React.memo(
 
 
 const Tabel: React.FC = () => {
-    const { tabel, setTabel, scannedToday } = useTabel();
+    const { tabel, baseline, setTabel, scannedToday } = useTabel();
 
     const [draft, setDraft] = useState<Elev[] | null>(null);
     const [mode, setMode] = useState<"highlight" | "filter">("highlight");
@@ -104,6 +105,12 @@ const Tabel: React.FC = () => {
     const [query, setQuery] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const [changesMap, setChangesMap] = useState<Map<number, Set<number>>>(new Map());
+
+    const baselineMap = useMemo(() => {
+        const m = new Map<string, Elev>();
+        baseline.forEach(e => m.set(e.name, e));
+        return m;
+    }, [baseline]);
 
     const source = edit && draft ? draft : tabel;
 
@@ -118,7 +125,7 @@ const Tabel: React.FC = () => {
         });
     }, [source]);
 
-    // 🔥 Map name → original index in source
+    //  Map name → original index in source
     const originalIndexMap = useMemo(() => {
         const map = new Map<string, number>();
         source.forEach((el, i) => map.set(el.name, i));
@@ -144,13 +151,13 @@ const Tabel: React.FC = () => {
     // Apply view mode
     const { viewMode, viewSet } = useMemo(() => {
         const filtered = (() => {
-            if (view === "changes") return source.filter((_, i) => changesMap.has(i));
+            if (view === "changes") return source.filter(el => changesMap.has(originalIndexMap.get(el.name)!));
             if (view === "unscanned") return source.filter((_, i) => unscannedMap.has(i));
             return source;
         })();
 
         return { viewMode: filtered, viewSet: new Set(filtered) };
-    }, [source, view, changesMap, unscannedMap]);
+    }, [view, source, changesMap, originalIndexMap, unscannedMap]);
 
     // Apply search
     const visibleData = useMemo(() => {
@@ -209,7 +216,7 @@ const Tabel: React.FC = () => {
             const timeout = setTimeout(() => setHighlightedIndex(null), 700);
             return () => clearTimeout(timeout);
         }
-    }, [firstMatchIndex]);
+    }, [query, firstMatchIndex]);
 
     // Toggle a flag
     const handleToggle = useCallback((originalIndex: number, colIndex: number) => {
@@ -366,6 +373,7 @@ const Tabel: React.FC = () => {
                                     [...changesMap.get(originalIndex)!]
                                 }
                                 onToggle={handleToggle}
+                                baselineMap={baselineMap}
                             />
                         );
                     })}

@@ -125,14 +125,12 @@ const Tabel: React.FC = () => {
         });
     }, [source]);
 
-    //  Map name → original index in source
     const originalIndexMap = useMemo(() => {
         const map = new Map<string, number>();
         source.forEach((el, i) => map.set(el.name, i));
         return map;
     }, [source]);
 
-    // Unscanned rows
     const unscannedMap = useMemo(() => {
         if (!scannedToday) return new Map<number, number[]>();
 
@@ -148,7 +146,6 @@ const Tabel: React.FC = () => {
         return map;
     }, [scannedToday, source, todayIndex]);
 
-    // Apply view mode
     const { viewMode, viewSet } = useMemo(() => {
         const filtered = (() => {
             if (view === "changes") return source.filter(el => changesMap.has(originalIndexMap.get(el.name)!));
@@ -159,7 +156,6 @@ const Tabel: React.FC = () => {
         return { viewMode: filtered, viewSet: new Set(filtered) };
     }, [view, source, changesMap, originalIndexMap, unscannedMap]);
 
-    // Apply search
     const visibleData = useMemo(() => {
         if (!query) return viewMode;
 
@@ -173,13 +169,11 @@ const Tabel: React.FC = () => {
         return viewMode;
     }, [query, viewMode, mode, fuzzy, fuse, viewSet]);
 
-    // Find first match for highlight mode
     const firstMatchIndex = useMemo(() => {
         if (!query || mode !== "highlight") return null;
 
         const lower = query.toLowerCase();
 
-        // Normal search (fuse OFF)
         if (!fuzzy) {
             const matches = visibleData
                 .map(el => ({
@@ -195,7 +189,6 @@ const Tabel: React.FC = () => {
             return originalIndexMap.get(matches[0].el.name) ?? null;
         }
 
-        // Fuzzy search (fuse ON)
         if (fuse) {
             const results = fuse.search(lower);
 
@@ -209,7 +202,6 @@ const Tabel: React.FC = () => {
         return null;
     }, [query, mode, fuzzy, fuse, visibleData, originalIndexMap]);
 
-    // Highlight effect
     useEffect(() => {
         setHighlightedIndex(firstMatchIndex);
         if (firstMatchIndex !== null) {
@@ -218,14 +210,13 @@ const Tabel: React.FC = () => {
         }
     }, [query, firstMatchIndex]);
 
-    // Toggle a flag
     const handleToggle = useCallback((originalIndex: number, colIndex: number) => {
         setDraft(prev => {
             if (!prev) return prev;
 
             const copy = [...prev];
 
-            // Clone row and flags while preserving tuple type
+            // clone row si flags while preserving tuple type
             const row = {
                 ...copy[originalIndex],
                 flags: [...copy[originalIndex].flags] as Elev["flags"]
@@ -236,6 +227,7 @@ const Tabel: React.FC = () => {
 
             return copy;
         });
+
 
         setChangesMap(prev => {
             const map = new Map(prev);

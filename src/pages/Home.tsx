@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 
 
 const Home: React.FC = () => {
-    const {lowPowerMode, sound, vibration, updateSetting} = useScanSettings();
+    const {lowPowerMode, sound, source, vibration, updateSetting} = useScanSettings();
     const { tabel , setTabel , scannedToday, clearScannedForToday, checkDateAndSync} = useTabel();
     const today = [0, 6].includes(new Date().getDay()) ? 1 : new Date().getDay();
     const numarDesertElevi = tabel.filter(elev => elev.flags[0] && elev.flags[today]).length;
@@ -345,6 +345,7 @@ const Home: React.FC = () => {
                         {
                             type: 'textarea',
                             placeholder: 'https://docs.google.com/spreadsheets/',
+                            value: source,
                         },
                     ]}
                 ></IonAlert>

@@ -34,13 +34,12 @@ type RowProps = {
     rowIndex: number;
     edit: boolean;
     highlighted: boolean;
-    changedFlags?: number[];
     onToggle: (rowIndex: number, colIndex: number) => void;
     baselineMap: Map<string, Elev>;
 };
 
 const TabelRow = React.memo(
-    ({ elev, edit, highlighted, changedFlags, onToggle, rowIndex, baselineMap}: RowProps) => {
+    ({ elev, edit, highlighted, onToggle, rowIndex, baselineMap}: RowProps) => {
 
         const rowRef = useRef<HTMLIonRowElement | null>(null);
 
@@ -77,7 +76,7 @@ const TabelRow = React.memo(
                                 onToggle(rowIndex, colIndex);
                             }}
                             color={
-                                changedFlags?.includes(colIndex) || baselineMap.get(elev.name)?.flags[colIndex] !== flag //TODO: diferenta intre schimbat acum si anterior
+                                baselineMap.get(elev.name)?.flags[colIndex] !== flag
                                     ? "warning"
                                     : flag
                                         ? "success"
@@ -96,7 +95,6 @@ const TabelRow = React.memo(
 
 const Tabel: React.FC = () => {
     const { tabel, baseline, setTabel, scannedToday } = useTabel();
-
     const [draft, setDraft] = useState<Elev[] | null>(null);
     const [mode, setMode] = useState<"highlight" | "filter">("highlight");
     const [view, setView] = useState<"all" | "changes" | "unscanned">("all");
@@ -104,7 +102,6 @@ const Tabel: React.FC = () => {
     const [edit, setEdit] = useState(false);
     const [query, setQuery] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
-    const [changesMap, setChangesMap] = useState<Map<number, Set<number>>>(new Map());
 
     const baselineMap = useMemo(() => {
         const m = new Map<string, Elev>();
@@ -146,15 +143,35 @@ const Tabel: React.FC = () => {
         return map;
     }, [scannedToday, source, todayIndex]);
 
+    const changedRows = useMemo(() => {
+        const set = new Set<number>();
+
+        source.forEach((row, i) => {
+            const baselineRow = baselineMap.get(row.name);
+
+            if (!baselineRow) return;
+
+            if (
+                row.flags.some(
+                    (flag, j) => flag !== baselineRow.flags[j]
+                )
+            ) {
+                set.add(i);
+            }
+        });
+
+        return set;
+    }, [source, baselineMap]);
+
     const { viewMode, viewSet } = useMemo(() => {
         const filtered = (() => {
-            if (view === "changes") return source.filter(el => changesMap.has(originalIndexMap.get(el.name)!));
+            if (view === "changes") return source.filter((_, i) => changedRows.has(i));
             if (view === "unscanned") return source.filter((_, i) => unscannedMap.has(i));
             return source;
         })();
 
         return { viewMode: filtered, viewSet: new Set(filtered) };
-    }, [view, source, changesMap, originalIndexMap, unscannedMap]);
+    }, [view, source, changedRows, unscannedMap]);
 
     const visibleData = useMemo(() => {
         if (!query) return viewMode;
@@ -227,20 +244,6 @@ const Tabel: React.FC = () => {
 
             return copy;
         });
-
-
-        setChangesMap(prev => {
-            const map = new Map(prev);
-            const set = new Set(map.get(originalIndex) ?? []);
-
-            if (set.has(colIndex)) set.delete(colIndex);
-            else set.add(colIndex);
-
-            if (set.size === 0) map.delete(originalIndex);
-            else map.set(originalIndex, set);
-
-            return map;
-        });
     }, []);
 
     return (
@@ -308,12 +311,8 @@ const Tabel: React.FC = () => {
                             <IonButton
                                 onClick={() => {
                                     if (draft) {
-                                        const newTabel = draft.map((row, i) =>
-                                            changesMap.has(i) ? row : tabel[i]
-                                        );
-                                        setTabel(newTabel);
+                                        setTabel(draft);
                                         setDraft(null);
-                                        setChangesMap(new Map());
                                         setEdit(false);
                                     }
                                 }}
@@ -326,7 +325,6 @@ const Tabel: React.FC = () => {
                             <IonButton
                                 onClick={() => {
                                     setDraft(null);
-                                    setChangesMap(new Map());
                                     setEdit(false);
                                 }}
                             >
@@ -360,10 +358,6 @@ const Tabel: React.FC = () => {
                                 rowIndex={originalIndex}
                                 edit={edit}
                                 highlighted={highlightedIndex === originalIndex}
-                                changedFlags={
-                                    changesMap.get(originalIndex) &&
-                                    [...changesMap.get(originalIndex)!]
-                                }
                                 onToggle={handleToggle}
                                 baselineMap={baselineMap}
                             />
